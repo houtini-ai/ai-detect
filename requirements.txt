@@ -1,0 +1,12 @@
+# Core (desklib DeBERTa-v3 detector + CLI + MCP server)
+torch>=2.0
+transformers>=4.40
+huggingface-hub>=0.20
+numpy>=1.24
+mcp>=1.0
+
+# Optional: small/fast ONNX detector (`--model light`)
+# pip install onnxruntime
+#
+# Optional GPU for the light model on Windows:
+# pip install onnxruntime-directml

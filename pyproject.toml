@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-detect"
+version = "1.0.0"
+description = "Per-sentence AI-text detection with pattern diagnostics — CLI and MCP server."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Richard Baxter", email = "richard@houtini.com" }]
+keywords = ["ai-detection", "ai-text-detector", "deberta", "raid", "mcp", "mcp-server", "nlp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Text Processing :: Linguistic",
+]
+dependencies = [
+    "torch>=2.0",
+    "transformers>=4.40",
+    "huggingface-hub>=0.20",
+    "numpy>=1.24",
+    "mcp>=1.0",
+]
+
+[project.optional-dependencies]
+# Small/fast ONNX detector (`--model light`).
+light = ["onnxruntime>=1.17"]
+# GPU execution provider for the light ONNX model on Windows.
+gpu-directml = ["onnxruntime-directml>=1.17"]
+dev = ["pytest>=7"]
+
+[project.urls]
+Homepage = "https://github.com/houtini-ai/ai-detect"
+Repository = "https://github.com/houtini-ai/ai-detect"
+"Built by" = "https://houtini.com"
+
+[project.scripts]
+ai-detect = "ai_detect.cli:main"
+ai-detect-mcp = "ai_detect.server:main"
+
+[tool.setuptools]
+packages = ["ai_detect"]
+# detect.py is an in-repo convenience shim, not an installed top-level module
+# (a bare `detect` name would risk colliding with other packages).

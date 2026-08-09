@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# Environments
+.env
+.env.*
+.venv/
+venv/
+env/
+
+# Logs / OS
+*.log
+nul
+.DS_Store
+
+# Editors / local tooling
+.claude/
+.idea/
+.vscode/
+
+# Models & caches (fetched from Hugging Face at runtime, never committed)
+models/
+*.safetensors
+*.bin
+*.onnx
+huggingface/
+
+# Drafts, scratch & working content (never publish)
+drafts/
+draft/
+scratch/
+scratchpad/
+removed-from-repo/
+tmp/
+*.tmp
+*.draft
+*-draft.*
+*.draft.*
+
+# Secrets & keys (never commit)
+*.key
+*.pem
+*.pfx
+*.p12
+*.crt
+.secrets
+secrets/
+credentials.json
+*_secret*
+*_token*
+*.apikey
+config.local.*
+settings.local.*
