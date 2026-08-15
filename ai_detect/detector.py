@@ -17,6 +17,7 @@ pattern diagnostics, and returns an aggregate report.
 
 import os
 import sys
+import threading
 
 from .patterns import (
     calculate_sdsl,
@@ -174,6 +175,10 @@ class DesklibBackend:
 
         cfg = MODELS["desklib"]
         self._torch = torch
+        # One inference at a time per loaded model: the MCP server can run several
+        # detections concurrently, and a single device serialises the work anyway —
+        # sharing it without a lock just risks overlapping batches on one GPU.
+        self._lock = threading.Lock()
 
         class DesklibAIDetectionModel(PreTrainedModel):
             config_class = AutoConfig
@@ -210,21 +215,22 @@ class DesklibBackend:
     def score(self, sentences):
         torch = self._torch
         probs = []
-        for start in range(0, len(sentences), BATCH_SIZE):
-            batch = sentences[start:start + BATCH_SIZE]
-            enc = self.tokenizer(
-                batch, padding=True, truncation=True, max_length=512,
-                return_tensors="pt",
-            ).to(self.device)
-            with torch.inference_mode():
-                logits = self.model(
-                    input_ids=enc["input_ids"],
-                    attention_mask=enc["attention_mask"],
-                )["logits"]
-                batch_probs = torch.sigmoid(logits).squeeze(-1).tolist()
-            if isinstance(batch_probs, float):
-                batch_probs = [batch_probs]
-            probs.extend(batch_probs)
+        with self._lock:
+            for start in range(0, len(sentences), BATCH_SIZE):
+                batch = sentences[start:start + BATCH_SIZE]
+                enc = self.tokenizer(
+                    batch, padding=True, truncation=True, max_length=512,
+                    return_tensors="pt",
+                ).to(self.device)
+                with torch.inference_mode():
+                    logits = self.model(
+                        input_ids=enc["input_ids"],
+                        attention_mask=enc["attention_mask"],
+                    )["logits"]
+                    batch_probs = torch.sigmoid(logits).squeeze(-1).tolist()
+                if isinstance(batch_probs, float):
+                    batch_probs = [batch_probs]
+                probs.extend(batch_probs)
         return probs
 
 
@@ -245,6 +251,7 @@ class LightBackend:
 
         cfg = MODELS["light"]
         self._np = np
+        self._lock = threading.Lock()  # see DesklibBackend
 
         if not is_model_cached("light"):
             _announce_download(cfg)
@@ -264,24 +271,25 @@ class LightBackend:
     def score(self, sentences):
         np = self._np
         probs = []
-        for start in range(0, len(sentences), BATCH_SIZE):
-            batch = sentences[start:start + BATCH_SIZE]
-            enc = self.tokenizer(
-                batch, padding=True, truncation=True, max_length=512,
-                return_tensors="np",
-            )
-            feeds = {}
-            for name in ("input_ids", "attention_mask", "token_type_ids"):
-                if name in self.input_names and name in enc:
-                    feeds[name] = enc[name].astype(np.int64)
-            if "token_type_ids" in self.input_names and "token_type_ids" not in feeds:
-                feeds["token_type_ids"] = np.zeros_like(feeds["input_ids"])
-            logits = self.session.run(None, feeds)[0]
-            # softmax over the 2 classes, take P(class 1 = ai)
-            m = logits.max(axis=1, keepdims=True)
-            exp = np.exp(logits - m)
-            softmax = exp / exp.sum(axis=1, keepdims=True)
-            probs.extend(softmax[:, 1].tolist())
+        with self._lock:
+            for start in range(0, len(sentences), BATCH_SIZE):
+                batch = sentences[start:start + BATCH_SIZE]
+                enc = self.tokenizer(
+                    batch, padding=True, truncation=True, max_length=512,
+                    return_tensors="np",
+                )
+                feeds = {}
+                for name in ("input_ids", "attention_mask", "token_type_ids"):
+                    if name in self.input_names and name in enc:
+                        feeds[name] = enc[name].astype(np.int64)
+                if "token_type_ids" in self.input_names and "token_type_ids" not in feeds:
+                    feeds["token_type_ids"] = np.zeros_like(feeds["input_ids"])
+                logits = self.session.run(None, feeds)[0]
+                # softmax over the 2 classes, take P(class 1 = ai)
+                m = logits.max(axis=1, keepdims=True)
+                exp = np.exp(logits - m)
+                softmax = exp / exp.sum(axis=1, keepdims=True)
+                probs.extend(softmax[:, 1].tolist())
         return probs
 
 
@@ -322,6 +330,13 @@ def is_model_cached(model_name):
 
 
 _DETECTOR_CACHE = {}
+# Guards construction only. The MCP server runs detections in worker threads, so
+# two concurrent first calls for the same model would otherwise both miss the cache
+# and each load a ~1.7 GB copy onto the device — doubling VRAM for no reason, or
+# OOMing outright. A per-key lock lets a second model load in parallel with the
+# first; only same-key callers queue.
+_DETECTOR_LOCKS = {}
+_DETECTOR_LOCKS_GUARD = threading.Lock()
 
 
 def _device_key(device):
@@ -339,14 +354,22 @@ def get_detector(model=DEFAULT_MODEL, device=None):
     if model not in MODELS:
         raise ValueError(f"Unknown model '{model}'. Choose from: {', '.join(MODELS)}")
     key = (model, _device_key(device))
-    if key not in _DETECTOR_CACHE:
-        backend = MODELS[model]["backend"]
-        if backend == "desklib":
-            _DETECTOR_CACHE[key] = DesklibBackend(device=device)
-        elif backend == "light":
-            _DETECTOR_CACHE[key] = LightBackend(device=device)
-        else:  # pragma: no cover - registry guard
-            raise ValueError(f"Unknown backend '{backend}'")
+
+    cached = _DETECTOR_CACHE.get(key)  # fast path: no lock once loaded
+    if cached is not None:
+        return cached
+
+    with _DETECTOR_LOCKS_GUARD:
+        lock = _DETECTOR_LOCKS.setdefault(key, threading.Lock())
+    with lock:
+        if key not in _DETECTOR_CACHE:  # re-check: another thread may have won
+            backend = MODELS[model]["backend"]
+            if backend == "desklib":
+                _DETECTOR_CACHE[key] = DesklibBackend(device=device)
+            elif backend == "light":
+                _DETECTOR_CACHE[key] = LightBackend(device=device)
+            else:  # pragma: no cover - registry guard
+                raise ValueError(f"Unknown backend '{backend}'")
     return _DETECTOR_CACHE[key]
 
 

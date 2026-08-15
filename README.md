@@ -164,20 +164,22 @@ Tools it exposes:
 | `detect_ai_text` | Score a string of text, sentence by sentence |
 | `detect_ai_file` | Score a local file (server reads it — keeps big drafts out of context) |
 | `compare_texts` | Score two texts and report the delta |
-| `get_model_status` | Report instantly whether a model is downloaded yet, and its size |
+| `get_model_status` | Report instantly whether a model is ready, still downloading, or absent |
 | `list_models` | List the available models, their sizes, and download state |
 
 ## The model & the download
 
 First run of the default model pulls **~1.7 GB** from the Hugging Face Hub and caches it under `~/.cache/huggingface`. After that it's instant and offline. Nothing about your text is sent anywhere — the model runs on your hardware.
 
-> **First run through MCP: the download blocks the first detect call.** The weights fetch inside that first call, so it can sit for a few minutes. The server exposes `get_model_status` (which returns instantly) so the client can check *before* detecting and warn you a download is pending, rather than looking like it has hung. Claude will typically do this for you; you can also just warm the cache once from the CLI:
+> **First run through MCP: the first detect call waits for the download.** The server starts fetching the weights in the background the moment it launches, so the connection itself is never held up — but a detect call issued before that finishes has to wait for it, which can be a few minutes. `get_model_status` returns instantly and distinguishes `ready` / `downloading` / `absent`, so the client can check *before* detecting and tell you what's actually happening rather than looking like it has hung. Claude will typically do this for you; you can also just warm the cache once from the CLI:
 >
 > ```bash
 > ai-detect --text "warming the cache"
 > ```
 >
-> Every call after that, CLI or MCP, is instant. `--model light` (~126 MB) downloads fast enough that it rarely trips this. (The MCP server also spends a few seconds importing its ML libraries at startup — that's expected.)
+> Every call after that, CLI or MCP, is instant. `--model light` (~126 MB) downloads fast enough that it rarely trips this. (The MCP server also spends a few seconds importing its ML libraries at startup — that's expected, and it happens in the background.)
+>
+> If a download stalls outright, a detect call gives up after 15 minutes with an explanatory error instead of hanging forever. Set `AI_DETECT_READY_TIMEOUT` (seconds, `0` = wait indefinitely) to change that.
 
 Why local and not a hosted API? desklib registers a custom model architecture, so it isn't served by Hugging Face's hosted inference — and even where a hosted detector exists, using it would mean shipping your unpublished copy to someone else's server. For a tool you point at commissioned work, local is the right default. If 1.7 GB is too much, `--model light` is a ~126 MB stand-in.
 

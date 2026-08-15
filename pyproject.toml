@@ -24,6 +24,8 @@ dependencies = [
     "huggingface-hub>=0.20",
     "numpy>=1.24",
     "mcp>=1.0",
+    # Used directly by the MCP server to run blocking detection off the event loop.
+    "anyio>=4.0",
 ]
 
 [project.optional-dependencies]
