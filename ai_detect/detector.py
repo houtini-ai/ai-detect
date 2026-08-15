@@ -123,6 +123,41 @@ def _announce_download(cfg):
     )
 
 
+def prefetch_model(model_name=DEFAULT_MODEL):
+    """Download a model's files into the local HF cache WITHOUT loading it onto a device.
+
+    Lets a background startup warmup make the first detect call fast (no ~1.7 GB
+    wait) while leaving GPU/RAM untouched until detection actually runs — the
+    weights land on disk; the tensors aren't materialised here (so this never
+    contends with other GPU work). No-op if the model is already cached. Never
+    raises: on a network/hub error it logs and returns False, and the first detect
+    call falls back to downloading the normal way.
+    """
+    cfg = MODELS.get(model_name)
+    if not cfg:
+        return False
+    if is_model_cached(model_name):
+        return True
+    try:
+        from huggingface_hub import snapshot_download
+    except Exception:
+        return False
+    # Weights + config + tokenizer only. '*.safetensors' avoids pulling a
+    # duplicate fp32 '.bin' when a repo ships both; the light model needs just its
+    # one ONNX file.
+    patterns = ["*.json", "*.txt", "tokenizer*", "*.model", "*.spm",
+                "vocab*", "merges*", "special_tokens*"]
+    patterns.append(cfg["onnx_file"] if cfg["backend"] == "light" else "*.safetensors")
+    _announce_download(cfg)
+    try:
+        snapshot_download(cfg["repo"], allow_patterns=patterns)
+    except Exception as e:  # network, auth, hub outage — stay non-fatal
+        print(f"ai-detect: background model prefetch failed ({e}); the first "
+              "detect call will download it instead.", file=sys.stderr)
+        return False
+    return is_model_cached(model_name)
+
+
 # ---------------------------------------------------------------------------
 # desklib backend (transformers + torch)
 # ---------------------------------------------------------------------------

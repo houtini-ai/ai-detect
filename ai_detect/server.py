@@ -23,6 +23,7 @@ Run: ai-detect-mcp   (or: python -m ai_detect.server)
 """
 
 import os
+import threading
 
 from mcp.server.fastmcp import FastMCP
 
@@ -32,10 +33,37 @@ from .detector import (
     classify_text,
     is_model_cached,
     preload_dependencies,
+    prefetch_model,
     verdict,
 )
 
 mcp = FastMCP("ai-detect")
+
+# The heavy ML deps (torch/transformers/onnxruntime) are imported in a background
+# thread at startup so the MCP `initialize` handshake returns immediately — clients
+# enforce a short connect budget (Claude Desktop drops the whole server if it isn't
+# ready within ~10s, which made every OTHER server look disconnected too). The
+# import must still happen in ONE dedicated thread: a first-time import of these
+# C-extension modules from a request worker thread can deadlock the import
+# machinery (see preload_dependencies). So detection tools call _await_ready()
+# first — an early call blocks on this Event until the preload thread finishes,
+# then hits a warm sys.modules cache instead of importing on the worker thread.
+_preload_done = threading.Event()
+
+
+def _preload_in_background():
+    try:
+        preload_dependencies()
+        # Also pull the default model's weights to disk (no device load) so the
+        # first detect call doesn't eat a ~1.7 GB download. No-op once cached.
+        prefetch_model(DEFAULT_MODEL)
+    finally:
+        _preload_done.set()
+
+
+def _await_ready():
+    """Block until the startup preload thread has imported the heavy deps."""
+    _preload_done.wait()
 
 
 def _summarise(data, include_all_sentences=False):
@@ -97,6 +125,7 @@ def detect_ai_text(
     verdict, per-sentence AI-flagged findings, style pattern totals, and
     sentence-length variation (SDSL) metrics.
     """
+    _await_ready()
     data = classify_text(text, model=model, device=_dev(device))
     return _summarise(data, include_all_sentences=include_all_sentences)
 
@@ -120,6 +149,7 @@ def detect_ai_file(
     First-run note: see detect_ai_text — call get_model_status first if the model
     may still need downloading.
     """
+    _await_ready()
     if not os.path.isfile(path):
         raise FileNotFoundError(f"No such file: {path}")
     with open(path, "r", encoding="utf-8") as f:
@@ -138,6 +168,7 @@ def compare_texts(
     device: str = "auto",
 ) -> dict:
     """Analyse two texts and report both AI scores (e.g. a draft vs an edit)."""
+    _await_ready()
     dev = _dev(device)
     a = classify_text(text_a, model=model, device=dev)
     b = classify_text(text_b, model=model, device=dev)
@@ -193,10 +224,14 @@ def list_models() -> dict:
 
 
 def main():
-    # Import heavy deps in the main thread before the stdio loop starts —
-    # first-time imports during a request can deadlock the server (see
-    # preload_dependencies).
-    preload_dependencies()
+    # Warm the heavy deps (and pre-download the default model) in the background so
+    # the stdio loop — and the MCP initialize handshake — starts immediately.
+    # Detection tools call _await_ready(), so the first import still happens once,
+    # in this dedicated preload thread, never on a request worker thread (which can
+    # deadlock — see preload_dependencies and _await_ready).
+    threading.Thread(
+        target=_preload_in_background, name="ai-detect-preload", daemon=True
+    ).start()
     mcp.run()
 
 
