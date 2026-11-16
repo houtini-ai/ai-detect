@@ -7,7 +7,7 @@ name = "ai-detect"
 version = "1.0.0"
 description = "Per-sentence AI-text detection with pattern diagnostics — CLI and MCP server."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Richard Baxter", email = "richard@houtini.com" }]
 keywords = ["ai-detection", "ai-text-detector", "deberta", "raid", "mcp", "mcp-server", "nlp"]
