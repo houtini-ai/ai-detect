@@ -160,7 +160,9 @@ def assess(report, n_models=1):
     if breakdown["ai"] >= 20 and breakdown["human"] >= 20:
         notes.append("Sentence scores are split, which can mean mixed authorship or "
                      "an edited draft. Single-sentence scores are a rough signal.")
-    label = verdict(pct).title().replace("Ai", "AI")
+    # Wider middle band than the legacy verdict(): near the operating point the
+    # honest answer is that it cannot tell.
+    label = "Likely AI" if pct > 60 else "Likely human" if pct < 40 else "Uncertain"
     return {"label": label, "ai_pct": pct, "basis": "document",
             "confidence": ("low", "moderate", "high")[level], "notes": notes,
             "breakdown": breakdown, "words": words}

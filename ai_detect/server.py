@@ -4,36 +4,57 @@ Exposes local AI-text detection over the Model Context Protocol (stdio).
 
 Tools
   detect_ai_text    analyse a string
-  detect_ai_file    analyse a local file (the server reads it)
+  detect_ai_file    analyse a local file (the engine reads it)
   detect_ai_url     fetch one web page and analyse it
   compare_texts     analyse two texts and report the change
   scan_batch        analyse many files / URLs, one summary row each
   get_model_status  is a model ready, downloading (with progress), absent or failed
   list_models       every model with licence, size, RAID rank and status
   prefetch          start downloading a model now
-  open_dashboard    start the local web UI and return its URL
+  open_dashboard    return the local web UI's URL (and open it if asked)
 
-Two rules shape this file.
+How it is built, and why
+------------------------
+This process is deliberately thin. It never imports numpy, torch, transformers
+or onnxruntime. All detection runs in a second process, the *engine*: the same
+local web server that ``ai-detect serve`` starts (ai_detect/web), launched here
+as a child with its standard input closed. The tools below are small HTTP
+calls to it on 127.0.0.1.
 
-1. Nothing blocks on a download. A tool that needs a model that is not on disk
-   starts the download in the background and returns at once with
-   ``status: "downloading"``, progress figures, the dashboard URL and one
-   sentence the client can relay. The caller asks again later.
+The reason is a Windows behaviour reproduced during the November 2026 rebuild:
+while any thread is blocked reading a pipe on standard input (which is what an
+MCP stdio server does all day), another thread that loads a C-extension module
+hangs until that read returns. The first release imported its ML libraries in
+a background thread after the stdio loop had started, so on Windows every
+detect call waited forever. Keeping the heavy imports out of the process that
+owns stdin removes the problem instead of racing it, and has three useful side
+effects: the MCP handshake is immediate, the dashboard and the MCP tools share
+one set of loaded models and one download manager, and a crash inside a model
+runtime cannot take the MCP connection down.
 
-2. Nothing blocks the event loop, and the heavy ML libraries are imported once,
-   in one dedicated thread, before any worker thread touches them (a first
-   import of torch/transformers from a request worker can deadlock the import
-   machinery). Every tool that can take time is ``async`` and hands its work to
-   a worker thread, which first waits for that preload.
+Nothing blocks on a download. A tool that needs a model that is not on disk
+starts the download in the engine and returns at once with
+``status: "downloading"``, progress figures, the dashboard URL and one
+sentence the client can relay.
 
 Run: ai-detect-mcp   (or: python -m ai_detect.server)
 """
 
-import functools
+import atexit
+import json
 import os
+import socket  # noqa: F401  (C extensions are imported now, on the main thread,
+import ssl  # noqa: F401      before the stdio reader exists; see the note above)
+import subprocess
+import sys
 import threading
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+import webbrowser
 
-import anyio.from_thread
+import anyio
 import anyio.to_thread
 
 try:  # MCP Python SDK 2.x
@@ -46,10 +67,9 @@ try:
 except ImportError:  # pragma: no cover - annotations are optional metadata
     ToolAnnotations = None
 
-from . import downloads, history
-from .detector import DEFAULT_MODEL, preload_dependencies, verdict
-from .models import MODELS, REGISTRY
-from .web import server as dashboard
+from ._version import __version__
+from .models import DEFAULT_MODEL, MODELS, REGISTRY
+from .web.server import DEFAULT_PORT, default_port
 
 INSTRUCTIONS = (
     "ai-detect scores text for AI authorship on this machine. Text, files and fetched pages "
@@ -62,17 +82,17 @@ INSTRUCTIONS = (
     "Relay that message to the user and call the tool again in a minute. get_model_status "
     "shows progress for any model; prefetch starts a download ahead of time.\n"
     "Every result carries dashboard_url, a local page with the highlighted text and details. "
-    "open_dashboard starts that web UI (http://127.0.0.1:8765 unless the port was busy; the "
-    "tool returns the real address) and can open it in the browser.\n"
+    f"The dashboard is at http://127.0.0.1:{DEFAULT_PORT} unless that port was busy; "
+    "open_dashboard returns the real address and can open it in the browser.\n"
     "Scores are evidence, not proof. Report the document score with its confidence and "
     "notes; single-sentence scores are a rough signal."
 )
 
 mcp = _Server("ai-detect", instructions=INSTRUCTIONS)
 
-_preload_done = threading.Event()
-_preload_error = None
-READY_TIMEOUT = float(os.environ.get("AI_DETECT_READY_TIMEOUT", "900"))
+ENGINE_START_TIMEOUT = float(os.environ.get("AI_DETECT_READY_TIMEOUT", "60"))
+_engine = {"url": "", "process": None, "error": None, "owned": False}
+_engine_lock = threading.Lock()
 
 
 def _annot(**kw):
@@ -82,80 +102,158 @@ def _annot(**kw):
 _READ = dict(readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
 
 
-def _preload_in_background():
-    """Import the heavy libraries in one dedicated thread, then start fetching
-    the default model if it is missing. Never raises."""
-    global _preload_error
+# ---------------------------------------------------------------------------
+# The engine process
+# ---------------------------------------------------------------------------
+
+def _http(url, body=None, method=None, timeout=30):
+    data = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(url, data=data, method=method or ("POST" if data else "GET"),
+                                 headers={"Content-Type": "application/json"})
     try:
-        preload_dependencies()
-        if os.environ.get("AI_DETECT_NO_PREFETCH", "").lower() not in ("1", "true", "yes"):
-            downloads.start(DEFAULT_MODEL)
-    except Exception as e:  # pragma: no cover - defensive
-        _preload_error = e
-    finally:
-        _preload_done.set()
-
-
-def _await_ready():
-    """Block until the ML libraries are imported. Worker threads only."""
-    timeout = READY_TIMEOUT if READY_TIMEOUT > 0 else None
-    if not _preload_done.wait(timeout):
-        raise TimeoutError(
-            f"ai-detect: startup did not finish within {READY_TIMEOUT:.0f}s. Restart the "
-            "server, or raise AI_DETECT_READY_TIMEOUT.")
-    if _preload_error is not None:
-        raise RuntimeError(f"ai-detect: startup failed: {_preload_error}")
-
-
-async def _offload(fn, *args, **kwargs):
-    """Run a blocking call in a worker thread, keeping the event loop free."""
-    return await anyio.to_thread.run_sync(functools.partial(fn, *args, **kwargs))
-
-
-def _dashboard_url():
-    """Start the dashboard on first use and return its real URL ('' if it
-    cannot start, which must never fail a detection)."""
-    try:
-        return dashboard.ensure_started()
-    except Exception:
-        return ""
-
-
-def _notifier(ctx):
-    """A progress callback that forwards to the MCP client from a worker thread:
-    progress notifications when the client sent a progressToken (the SDK drops
-    them otherwise), and a log line either way."""
-    if ctx is None:
-        return None
-
-    def notify(event):
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return json.loads(r.read() or b"{}")
+    except urllib.error.HTTPError as e:
         try:
-            stage, model = event.get("stage", ""), event.get("model", "")
-            index, of = event.get("index", 0), event.get("of", 1)
-            done = index + (0.5 if stage == "scoring" else 0)
-            message = f"{stage} {model}".strip()
-            anyio.from_thread.run(ctx.report_progress, done, of, message)
-            anyio.from_thread.run(ctx.info, f"ai-detect: {message}")
-        except Exception:
-            pass  # a client that does not take notifications must not break a scan
-    return notify
+            message = json.loads(e.read()).get("error") or str(e)
+        except ValueError:
+            message = str(e)
+        raise ValueError(message) from None
 
 
-def _downloading(statuses):
-    """The immediate answer when a needed model is not on disk yet."""
-    url = _dashboard_url()
-    pending = [s for s in statuses if s["status"] != "ready"]
-    failed = [s for s in pending if s["status"] == "failed"]
+def _is_engine(url):
+    try:
+        return "version" in _http(url + "/api/state", timeout=2)
+    except (OSError, ValueError):
+        return False
+
+
+def _start_engine():
+    """Find a running ai-detect dashboard on the default port, or start one.
+    Returns its URL. Blocking; call from a worker thread."""
+    with _engine_lock:
+        if _engine["url"] and _is_engine(_engine["url"]):
+            return _engine["url"]
+        existing = f"http://127.0.0.1:{default_port()}"
+        if _is_engine(existing):
+            _engine.update(url=existing, owned=False)
+            return existing
+        log_dir = os.environ.get("AI_DETECT_HOME") or os.path.join(os.path.expanduser("~"), ".ai-detect")
+        os.makedirs(log_dir, exist_ok=True)
+        log = open(os.path.join(log_dir, "engine.log"), "ab")
+        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        process = subprocess.Popen(
+            [sys.executable, "-m", "ai_detect.cli", "serve", "--no-browser",
+             "--exit-with-parent", str(os.getpid())],
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=log, creationflags=flags)
+        _engine.update(process=process, owned=True)
+        deadline = time.time() + ENGINE_START_TIMEOUT
+        url = ""
+        while time.time() < deadline and process.poll() is None:
+            line = process.stdout.readline().decode("utf-8", "replace")
+            if "http://127.0.0.1:" in line:
+                url = "http://127.0.0.1:" + line.split("http://127.0.0.1:", 1)[1].split()[0]
+                break
+        while url and time.time() < deadline and not _is_engine(url):
+            time.sleep(0.2)
+        if not url or not _is_engine(url):
+            raise RuntimeError(
+                "ai-detect: the detection engine did not start. See "
+                f"{os.path.join(log_dir, 'engine.log')} for the reason.")
+        _engine["url"] = url
+        return url
+
+
+def _stop_engine():
+    process = _engine.get("process")
+    if process is not None and process.poll() is None:
+        process.terminate()
+
+
+atexit.register(_stop_engine)
+
+
+async def _call(path, body=None, method=None, timeout=30):
+    """One HTTP call to the engine, off the event loop."""
+    url = await anyio.to_thread.run_sync(_start_engine)
+    return await anyio.to_thread.run_sync(lambda: _http(url + path, body, method, timeout))
+
+
+async def _models_state(model_ids):
+    state = await _call("/api/state")
+    by_id = {m["id"]: m for m in state["models"]}
+    return [_status_fields(by_id[m]) for m in model_ids]
+
+
+def _status_fields(m):
+    """The status part of one /api/state model row, with the legacy vocabulary."""
+    keys = ("label", "approx_mb", "bytes_done", "bytes_total", "percent", "eta_seconds",
+            "error", "licence", "runtime", "downloaded", "message")
+    state = m["status"]
+    return {"model": m["id"], **{k: m.get(k) for k in keys}, "state": state,
+            "status": "absent" if state == "not_downloaded" else state, "note": m.get("message")}
+
+
+async def _ensure_models(model_ids):
+    """Start any missing download. Returns None when everything is ready, else
+    the immediate "downloading" answer."""
+    statuses = await _models_state(model_ids)
+    pending = [s for s in statuses if s["state"] != "ready"]
+    if not pending:
+        return None
+    for s in pending:
+        if s["state"] != "downloading":
+            await _call(f"/api/models/{s['model']}/download", method="POST")
+    statuses = await _models_state(model_ids)
+    pending = [s for s in statuses if s["state"] != "ready"]
+    if not pending:
+        return None
+    failed = [s for s in pending if s["state"] == "failed"]
     first = (failed or pending)[0]
-    where = f" Watch progress at {url}/#/models." if url else ""
-    again = "" if failed else " Ask me again in a minute."
+    url = _engine["url"]
     return {
         "status": "failed" if failed else "downloading",
         "ready": False,
         "models": statuses,
-        "dashboard_url": f"{url}/#/models" if url else "",
-        "message": first["message"] + where + again,
+        "dashboard_url": f"{url}/#/models",
+        "message": f"{first['message']} Watch progress at {url}/#/models."
+                   + ("" if failed else " Ask me again in a minute."),
     }
+
+
+async def _notify(ctx, progress):
+    """Forward engine progress to the client: a progress notification when it
+    sent a progressToken (the SDK drops it otherwise) and a log line either way."""
+    if ctx is None:
+        return
+    stage, model = progress.get("stage", ""), progress.get("model", "")
+    index, of = progress.get("index", 0), progress.get("of", 1)
+    message = f"{stage} {model}".strip()
+    try:
+        await ctx.report_progress(index + (0.5 if stage == "scoring" else 0), of, message)
+        await ctx.info(f"ai-detect: {message}")
+    except Exception:
+        pass  # a client that takes no notifications must not break a scan
+
+
+async def _run_job(kind, body, ctx=None):
+    job_id = (await _call(f"/api/start/{kind}", body))["job_id"]
+    last = None
+    while True:
+        job = await _call(f"/api/jobs/{job_id}")
+        if job["state"] == "done":
+            return job["result"]
+        if job["state"] == "failed":
+            raise RuntimeError(job["error"])
+        marker = (job["progress"].get("stage"), job["progress"].get("model"))
+        if marker != last:
+            last = marker
+            await _notify(ctx, job["progress"])
+        await anyio.sleep(0.3)
+
+
+def _verdict(pct):
+    return "LIKELY AI" if pct > 50 else "LIKELY HUMAN" if pct < 40 else "MIXED"
 
 
 def _summarise(data, include_all_sentences=False):
@@ -168,12 +266,13 @@ def _summarise(data, include_all_sentences=False):
         for s in data["sentences"] if s["label"] == "AI"
     ]
     tells = data.get("tells") or {"structure": [], "visual": [], "summary": {}}
+    url = _engine["url"]
     out = {
         "status": "ok",
         "model": data.get("model"),
         "models": data["models"],
         "model_ai_pct": data["model_ai_pct"],
-        "verdict": verdict(data["model_ai_pct"]),
+        "verdict": _verdict(data["model_ai_pct"]),
         "document_ai_pct": data["document_ai_pct"],
         "assessment": data.get("assessment"),
         "operating_point": data.get("operating_point"),
@@ -189,7 +288,7 @@ def _summarise(data, include_all_sentences=False):
                       for t in (tells["structure"] + tells["visual"])[:25]],
         },
         "scan_id": data.get("scan_id"),
-        "dashboard_url": data.get("dashboard_url", ""),
+        "dashboard_url": f"{url}/#/scan/{data.get('scan_id')}",
     }
     if data.get("per_model"):
         out["per_model"] = data["per_model"]
@@ -203,77 +302,22 @@ def _summarise(data, include_all_sentences=False):
     return out
 
 
-def _dev(device):
+def _check(model, device):
+    """Validate before any work: a typo fails in milliseconds."""
     if device not in (None, "", "auto", "cpu", "cuda", "gpu"):
         raise ValueError(f"Unknown device '{device}'. Use 'auto', 'cpu' or 'cuda'.")
-    return None if device in (None, "", "auto") else device
+    return REGISTRY.parse(model, DEFAULT_MODEL), (None if device in (None, "", "auto") else device)
 
 
-def _scan(source, model, device, perplexity, notify):
-    """Shared worker: validate, make sure models are on disk, analyse, save."""
-    from .web.app import run_scan
-    model_ids = REGISTRY.parse(model, DEFAULT_MODEL)   # a typo fails in milliseconds
-    dev = _dev(device)
-    ready, statuses = downloads.ensure(model_ids)
-    if not ready:
-        return None, _downloading(statuses)
-    _await_ready()
-    _dashboard_url()
-    report = run_scan(source, models=model_ids, device=dev, perplexity=perplexity, progress=notify)
-    return report, None
-
-
-def _run_detect(source, model, device, include_all_sentences, perplexity, notify):
-    report, pending = _scan(source, model, device, perplexity, notify)
+async def _detect(source, model, device, include_all_sentences, perplexity, ctx, timeout=30.0):
+    model_ids, dev = _check(model, device)
+    pending = await _ensure_models(model_ids)
     if pending:
         return pending
-    out = _summarise(report, include_all_sentences=include_all_sentences)
-    if source.get("file"):
-        out["file"] = source["file"]
-    if source.get("url"):
-        out["url"] = report["source"]["label"]
-    return out
-
-
-def _run_compare(text_a, text_b, model, device, notify):
-    from .analyze import compare
-    a, pending = _scan({"text": text_a}, model, device, False, notify)
-    if pending:
-        return pending
-    b, _ = _scan({"text": text_b}, model, device, False, notify)
-    return {
-        "status": "ok",
-        "a": _summarise(a), "b": _summarise(b),
-        "delta_ai_pct": round(a["model_ai_pct"] - b["model_ai_pct"], 1),
-        "change": compare(a, b),
-    }
-
-
-def _run_batch(items, model, device):
-    from .web.app import _options, run_batch
-    model_ids = REGISTRY.parse(model, DEFAULT_MODEL)
-    ready, statuses = downloads.ensure(model_ids)
-    if not ready:
-        return _downloading(statuses)
-    if not items:
-        raise ValueError("Give at least one file path or URL.")
-    if len(items) > 200:
-        raise ValueError("A batch takes at most 200 items.")
-    _await_ready()
-    url = _dashboard_url()
-    sources = [{"url": i} if i.lower().startswith(("http://", "https://")) else {"file": i}
-               for i in items]
-    result = run_batch(sources, _options({"models": model_ids, "device": _dev(device)}))
-    result["status"] = "ok"
-    result["dashboard_url"] = f"{url}/#/history" if url else ""
-    return result
-
-
-_DOWNLOAD_NOTE = (
-    "May trigger a model download: if the model is not on disk this returns at once with "
-    "status \"downloading\" and a progress message instead of a result. Relay the message and "
-    "call again later."
-)
+    result = await _run_job("scan", {**source, "models": model_ids, "device": dev,
+                                     "perplexity": perplexity, "timeout": timeout}, ctx)
+    report = await _call("/api/scans/" + result["scan_id"])
+    return _summarise(report, include_all_sentences=include_all_sentences), report
 
 
 @mcp.tool(annotations=_annot(title="Detect AI text", **_READ))
@@ -302,8 +346,10 @@ async def detect_ai_text(
     May trigger a model download: if the model is not on disk this returns at once with
     status "downloading" and a progress message instead of a result.
     """
-    return await _offload(_run_detect, {"text": text}, model, device, include_all_sentences,
-                          perplexity, _notifier(ctx))
+    if not text or not text.strip():
+        raise ValueError("No text provided.")
+    out = await _detect({"text": text}, model, device, include_all_sentences, perplexity, ctx)
+    return out if isinstance(out, dict) else out[0]
 
 
 @mcp.tool(annotations=_annot(title="Detect AI text in a file", **_READ))
@@ -315,7 +361,7 @@ async def detect_ai_file(
     perplexity: bool = False,
     ctx: Context = None,
 ) -> dict:
-    """Score a local file (the server reads it, so a long draft never enters the
+    """Score a local file (the engine reads it, so a long draft never enters the
     conversation). Text and Markdown are read directly; .html files are rendered
     with headless Chromium (needs the [web] extra).
 
@@ -331,8 +377,12 @@ async def detect_ai_file(
     """
     if not os.path.isfile(path):
         raise FileNotFoundError(f"No such file: {path}")
-    return await _offload(_run_detect, {"file": path}, model, device, include_all_sentences,
-                          perplexity, _notifier(ctx))
+    out = await _detect({"path": os.path.abspath(path)}, model, device, include_all_sentences,
+                        perplexity, ctx)
+    if isinstance(out, dict):
+        return out
+    out[0]["file"] = path
+    return out[0]
 
 
 @mcp.tool(annotations=_annot(title="Detect AI text on a web page", readOnlyHint=True,
@@ -362,23 +412,15 @@ async def detect_ai_url(
     May trigger a model download (see detect_ai_text): returns status "downloading"
     at once if the model is not on disk.
     """
-    from .fetch import _check_url
-    _check_url(url)
-
-    def work():
-        from .web.app import run_scan  # noqa: F401  (imported in the worker thread)
-        model_ids = REGISTRY.parse(model, DEFAULT_MODEL)
-        ready, statuses = downloads.ensure(model_ids)
-        if not ready:
-            return _downloading(statuses)
-        _await_ready()
-        _dashboard_url()
-        report = run_scan({"url": url}, models=model_ids, device=_dev(device),
-                          perplexity=perplexity, timeout=timeout, progress=_notifier(ctx))
-        out = _summarise(report, include_all_sentences=include_all_sentences)
-        out["url"] = report["source"]["label"]
+    parts = urllib.parse.urlparse((url or "").strip())
+    if parts.scheme not in ("http", "https") or not parts.netloc:
+        raise ValueError(f"Not a fetchable URL (need http:// or https://): {url!r}")
+    out = await _detect({"url": url.strip()}, model, device, include_all_sentences, perplexity,
+                        ctx, timeout)
+    if isinstance(out, dict):
         return out
-    return await _offload(work)
+    out[0]["url"] = out[1]["source"]["label"]
+    return out[0]
 
 
 @mcp.tool(annotations=_annot(title="Compare two texts", **_READ))
@@ -392,28 +434,41 @@ async def compare_texts(
     """Analyse two texts (e.g. a draft and an edit) and report both results and
     the change. May trigger a model download: returns status "downloading" at
     once if the model is not on disk."""
-    return await _offload(_run_compare, text_a, text_b, model, device, _notifier(ctx))
+    model_ids, dev = _check(model, device)
+    pending = await _ensure_models(model_ids)
+    if pending:
+        return pending
+    result = await _run_job("compare", {"a": {"text": text_a}, "b": {"text": text_b},
+                                        "models": model_ids, "device": dev}, ctx)
+    a = await _call("/api/scans/" + result["a"])
+    b = await _call("/api/scans/" + result["b"])
+    return {
+        "status": "ok",
+        "a": _summarise(a), "b": _summarise(b),
+        "delta_ai_pct": round(a["model_ai_pct"] - b["model_ai_pct"], 1),
+        "change": result["compare"],
+    }
 
 
 @mcp.tool(annotations=_annot(title="Scan many files or URLs", readOnlyHint=True,
                              destructiveHint=False, idempotentHint=True, openWorldHint=True))
-async def scan_batch(items: list[str], model: str = DEFAULT_MODEL, device: str = "auto") -> dict:
+async def scan_batch(items: list[str], model: str = DEFAULT_MODEL, device: str = "auto",
+                     ctx: Context = None) -> dict:
     """Scan up to 200 file paths and/or URLs one after another and return one
     summary row each (verdict, document score, flagged sentences, tells, scan_id).
     Full results open from the dashboard history. May trigger a model download:
     returns status "downloading" at once if the model is not on disk."""
-    return await _offload(_run_batch, items, model, device)
-
-
-def _status(model):
-    s = downloads.status(model)
-    legacy = "absent" if s["status"] == "not_downloaded" else s["status"]
-    return {**s, "state": s["status"], "status": legacy, "note": s["message"]}
+    model_ids, dev = _check(model, device)
+    pending = await _ensure_models(model_ids)
+    if pending:
+        return pending
+    result = await _run_job("batch", {"items": items, "models": model_ids, "device": dev}, ctx)
+    return {"status": "ok", **result, "dashboard_url": f"{_engine['url']}/#/history"}
 
 
 @mcp.tool(annotations=_annot(title="Model status", **_READ))
-def get_model_status(model: str = DEFAULT_MODEL) -> dict:
-    """Is a model ready, downloading, not downloaded or failed? Returns instantly.
+async def get_model_status(model: str = DEFAULT_MODEL) -> dict:
+    """Is a model ready, downloading, not downloaded or failed?
 
     `status` is 'ready', 'downloading', 'absent' or 'failed' (`state` says the
     same with 'not_downloaded' for absent). While downloading it gives bytes_done,
@@ -421,70 +476,80 @@ def get_model_status(model: str = DEFAULT_MODEL) -> dict:
     `message` is one sentence to relay. Also returns dashboard_url. Never triggers
     a download.
     """
-    if model not in MODELS and model not in REGISTRY.aliases:
+    try:
+        model_id = REGISTRY.resolve(model).id
+    except ValueError:
         return {"error": f"Unknown model '{model}'", "available": list(MODELS)}
-    out = _status(model)
-    url = dashboard.url()
-    out["dashboard_url"] = f"{url}/#/models" if url else ""
+    out = (await _models_state([model_id]))[0]
+    out["dashboard_url"] = f"{_engine['url']}/#/models"
     return out
 
 
 @mcp.tool(annotations=_annot(title="List models", **_READ))
-def list_models() -> dict:
+async def list_models() -> dict:
     """List every detection model: size, licence, RAID leaderboard rank (with its
     source and the date it was read), runtime, and download status. Never
     triggers a download."""
-    url = dashboard.url()
+    state = await _call("/api/state")
     return {
         "default": DEFAULT_MODEL,
         "max_ensemble": 5,
-        "dashboard_url": f"{url}/#/models" if url else "",
-        "models": {name: {**spec.public(), **_status(name)} for name, spec in MODELS.items()},
+        "dashboard_url": f"{_engine['url']}/#/models",
+        "models": {m["id"]: {**m, **_status_fields(m)} for m in state["models"]},
     }
 
 
 @mcp.tool(annotations=_annot(title="Download a model", readOnlyHint=False, destructiveHint=False,
                              idempotentHint=True, openWorldHint=True))
-def prefetch(model: str = DEFAULT_MODEL) -> dict:
+async def prefetch(model: str = DEFAULT_MODEL) -> dict:
     """Start downloading a model's weights from Hugging Face in the background so
     the first detection is not delayed. `model` is an id, or 'all'. Returns at
     once with progress; poll get_model_status. A failed or interrupted download
     is resumed by calling this again."""
     ids = list(MODELS) if model == "all" else [REGISTRY.resolve(model).id]
-    url = _dashboard_url()
-    statuses = [downloads.start(m) for m in ids]
-    for s in statuses:
-        s["state"] = s["status"]
+    for model_id in ids:
+        await _call(f"/api/models/{model_id}/download", method="POST")
+    statuses = await _models_state(ids)
     return {
         "models": statuses,
-        "dashboard_url": f"{url}/#/models" if url else "",
+        "dashboard_url": f"{_engine['url']}/#/models",
         "message": " ".join(s["message"] for s in statuses),
     }
 
 
 @mcp.tool(annotations=_annot(title="Open the dashboard", readOnlyHint=False,
                              destructiveHint=False, idempotentHint=True, openWorldHint=False))
-def open_dashboard(open_browser: bool = False) -> dict:
-    """Start the local web UI (bound to 127.0.0.1) and return its URL. It shows
-    scan results with highlighted text, the tells panel, compare, batch, history
-    and live model download progress. Set open_browser=true to open it in the
-    user's default browser. Never triggers a download."""
-    url = dashboard.ensure_started(open_browser=open_browser)
+async def open_dashboard(open_browser: bool = False) -> dict:
+    """Return the URL of the local web UI (bound to 127.0.0.1), starting it if
+    needed. It shows scan results with highlighted text, the tells panel,
+    compare, batch, history and live model download progress. Set
+    open_browser=true to open it in the user's default browser. Never triggers
+    a download."""
+    state = await _call("/api/state")
+    url = _engine["url"]
+    if open_browser:
+        webbrowser.open(url)
+    port = int(url.rsplit(":", 1)[-1])
     return {
-        "url": url, "dashboard_url": url,
-        "port": int(url.rsplit(":", 1)[-1]),
-        "default_port": dashboard.default_port(),
-        "port_fell_back": int(url.rsplit(":", 1)[-1]) != dashboard.default_port(),
-        "history_enabled": history.enabled(),
+        "url": url, "dashboard_url": url, "port": port, "default_port": default_port(),
+        "port_fell_back": port != default_port(),
+        "history_enabled": state["history"]["enabled"], "version": __version__,
         "message": f"The ai-detect dashboard is at {url}",
     }
 
 
 def main():
-    threading.Thread(target=_preload_in_background, name="ai-detect-preload", daemon=True).start()
-    from .web import app as webapp
-    webapp.BEFORE_JOB = _await_ready  # dashboard jobs also wait for the one-thread import
+    # Start the engine now so it is warm by the first tool call. Only stdlib
+    # work happens in this thread; nothing heavy is ever imported here.
+    threading.Thread(target=lambda: _safe_start(), name="ai-detect-engine", daemon=True).start()
     mcp.run()
+
+
+def _safe_start():
+    try:
+        _start_engine()
+    except Exception as e:  # reported again, with the reason, by the first tool call
+        _engine["error"] = e
 
 
 if __name__ == "__main__":

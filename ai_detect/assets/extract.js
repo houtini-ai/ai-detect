@@ -4,7 +4,7 @@
 // Coordinates are CSS pixels from the top-left of the full page, so they map
 // straight onto a full-page screenshot.
 () => {
-  const NOISE = /author|byline|contributor|cookie|consent|gdpr|newsletter|subscribe|share|social|related|comment|sidebar|breadcrumb|toc\b|table-of-contents|promo|advert|popup|modal|banner/i;
+  const NOISE = /author|byline|contributor|article-header|post-header|entry-header|header-comp|tooltip|cookie|consent|gdpr|newsletter|subscribe|share|social|related|comment|sidebar|breadcrumb|toc\b|table-of-contents|promo|advert|popup|modal|banner/i;
   const SKIP_TAGS = new Set(['NAV', 'HEADER', 'FOOTER', 'ASIDE', 'FORM', 'SCRIPT', 'STYLE', 'NOSCRIPT',
     'TEMPLATE', 'IFRAME', 'SVG', 'BUTTON', 'SELECT', 'DIALOG', 'PRE', 'CODE']);
   const SKIP_ROLES = new Set(['navigation', 'banner', 'contentinfo', 'complementary', 'search', 'dialog', 'alertdialog']);

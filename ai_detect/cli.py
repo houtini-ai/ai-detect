@@ -195,12 +195,34 @@ def cmd_serve(argv):
                     help="port to try first (default 8765, or AI_DETECT_PORT); the next free "
                          "port is used if it is busy")
     ap.add_argument("--no-browser", action="store_true", help="do not open a browser window")
+    ap.add_argument("--exit-with-parent", type=int, default=None, metavar="PID",
+                    help=argparse.SUPPRESS)  # set by the MCP server that starts this engine
     args = ap.parse_args(argv)
+    import threading
+
     from .detector import preload_dependencies
     from .web.server import serve_forever
-    preload_dependencies()  # import the ML libraries on the main thread (see detector.py)
+    if args.exit_with_parent:
+        threading.Thread(target=_exit_when_gone, args=(args.exit_with_parent,), daemon=True).start()
+    # Warm the ML libraries in the background so the page is up at once.
+    threading.Thread(target=preload_dependencies, name="ai-detect-preload", daemon=True).start()
     serve_forever(port=args.port, open_browser=not args.no_browser)
     return 0
+
+
+def _exit_when_gone(pid):
+    """Stop this process when the process that started it has gone, so an MCP
+    client that is killed does not leave an engine behind."""
+    import time
+    if os.name == "nt":
+        import ctypes
+        handle = ctypes.windll.kernel32.OpenProcess(0x00100000, False, pid)  # SYNCHRONIZE
+        if handle:
+            ctypes.windll.kernel32.WaitForSingleObject(handle, 0xFFFFFFFF)   # INFINITE
+    else:
+        while os.getppid() == pid:
+            time.sleep(1)
+    os._exit(0)
 
 
 def _looks_like_path(value):
