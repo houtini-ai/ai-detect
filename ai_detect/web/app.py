@@ -82,7 +82,9 @@ def _work():
 
 
 def _wait_for_models(model_ids, progress):
-    """Download anything missing, reporting progress into the job."""
+    """Download anything missing, reporting progress into the job. A download
+    that fails ends the job with the reason: downloads.ensure() does not
+    restart a failed download, so the failure is seen here on the next poll."""
     while True:
         ready, statuses = downloads.ensure(model_ids)
         failed = [s for s in statuses if s["status"] == "failed"]
@@ -124,8 +126,12 @@ def _source_from(body):
         name = os.path.basename(str(body.get("file_name") or "upload.txt"))
         if name.lower().endswith((".html", ".htm")):
             fd, tmp = tempfile.mkstemp(suffix=".html", prefix="ai-detect-")
-            with os.fdopen(fd, "w", encoding="utf-8") as f:
-                f.write(body["file_content"])
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    f.write(str(body["file_content"]))
+            except BaseException:
+                _remove([tmp])
+                raise
             return {"file": tmp}, tmp
         return {"text": body["file_content"]}, None
     text = (body.get("text") or "").strip()
@@ -140,10 +146,20 @@ def _options(body):
             "timeout": float(body.get("timeout") or 30)}
 
 
+def _remove(paths):
+    """Delete the temp files written for uploaded .html content."""
+    for path in paths:
+        if path:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+
+
 def _scan_job(body):
-    source, tmp = _source_from(body)
     options = _options(body)
     REGISTRY.parse(options["models"], DEFAULT_MODEL)  # reject a bad model id now
+    source, tmp = _source_from(body)  # last: nothing after this can fail before fn runs
 
     def fn(progress):
         try:
@@ -151,28 +167,33 @@ def _scan_job(body):
             report = run_scan(source, progress=progress, label=label, **options)
             return {"scan_id": report["scan_id"]}
         finally:
-            if tmp:
-                try:
-                    os.remove(tmp)
-                except OSError:
-                    pass
+            _remove([tmp])
     return fn
 
 
 def _compare_job(body):
     options = _options(body)
-    sides = []
-    for key in ("a", "b"):
-        side = body.get(key) or {}
-        sides.append(_source_from(side)[0])
+    REGISTRY.parse(options["models"], DEFAULT_MODEL)
+    sides, temps = [], []
+    try:
+        for key in ("a", "b"):
+            source, tmp = _source_from(body.get(key) or {})
+            sides.append(source)
+            temps.append(tmp)
+    except BaseException:
+        _remove(temps)
+        raise
 
     def fn(progress):
-        reports = []
-        for n, source in enumerate(sides):
-            reports.append(run_scan(
-                source, progress=lambda e, n=n: progress({**e, "side": "ab"[n]}), **options))
-        return {"a": reports[0]["scan_id"], "b": reports[1]["scan_id"],
-                "compare": compare(reports[0], reports[1])}
+        try:
+            reports = []
+            for n, source in enumerate(sides):
+                reports.append(run_scan(
+                    source, progress=lambda e, n=n: progress({**e, "side": "ab"[n]}), **options))
+            return {"a": reports[0]["scan_id"], "b": reports[1]["scan_id"],
+                    "compare": compare(reports[0], reports[1])}
+        finally:
+            _remove(temps)
     return fn
 
 

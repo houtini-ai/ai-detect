@@ -210,18 +210,92 @@ def cmd_serve(argv):
     return 0
 
 
+_SYNCHRONIZE = 0x00100000
+_PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+_INFINITE = 0xFFFFFFFF
+_WAIT_OBJECT_0 = 0
+_STILL_ACTIVE = 259
+_ERROR_ACCESS_DENIED = 5
+
+
+def _kernel32():
+    """kernel32 with the prototypes declared. Without them ctypes treats every
+    argument and result as a C int, which truncates a HANDLE (pointer-sized) on
+    64-bit Windows."""
+    import ctypes
+    from ctypes import wintypes
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    k32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    k32.OpenProcess.restype = wintypes.HANDLE
+    k32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+    k32.WaitForSingleObject.restype = wintypes.DWORD
+    k32.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+    k32.GetExitCodeProcess.restype = wintypes.BOOL
+    k32.CloseHandle.argtypes = [wintypes.HANDLE]
+    k32.CloseHandle.restype = wintypes.BOOL
+    return k32
+
+
+def _open_process(pid, access):
+    """A Windows process handle, or None if it cannot be opened."""
+    return _kernel32().OpenProcess(access, False, pid) or None
+
+
+def _pid_alive(pid):
+    """Is a process with this id running? When the answer cannot be had (the
+    process belongs to someone else), it is taken to be running."""
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+        k32 = _kernel32()
+        handle = k32.OpenProcess(_PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if not handle:
+            return ctypes.get_last_error() == _ERROR_ACCESS_DENIED
+        try:
+            code = wintypes.DWORD()
+            if not k32.GetExitCodeProcess(handle, ctypes.byref(code)):
+                return True
+            return code.value == _STILL_ACTIVE
+        finally:
+            k32.CloseHandle(handle)
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:
+        return True
+    return True
+
+
+def _wait_until_gone(pid, poll=1.0):
+    """Return once process ``pid`` has gone.
+
+    Windows: wait on a handle to it. If the handle cannot be opened (or the
+    wait fails), fall back to asking once a ``poll`` whether the pid is still
+    alive, instead of treating "cannot open" as "gone".
+    Elsewhere: ``pid`` is this process's parent; it has gone when we are
+    re-parented."""
+    import time
+    if os.name != "nt":
+        while os.getppid() == pid:
+            time.sleep(poll)
+        return
+    handle = _open_process(pid, _SYNCHRONIZE)
+    if handle:
+        k32 = _kernel32()
+        try:
+            if k32.WaitForSingleObject(handle, _INFINITE) == _WAIT_OBJECT_0:
+                return
+        finally:
+            k32.CloseHandle(handle)
+    while _pid_alive(pid):
+        time.sleep(poll)
+
+
 def _exit_when_gone(pid):
     """Stop this process when the process that started it has gone, so an MCP
     client that is killed does not leave an engine behind."""
-    import time
-    if os.name == "nt":
-        import ctypes
-        handle = ctypes.windll.kernel32.OpenProcess(0x00100000, False, pid)  # SYNCHRONIZE
-        if handle:
-            ctypes.windll.kernel32.WaitForSingleObject(handle, 0xFFFFFFFF)   # INFINITE
-    else:
-        while os.getppid() == pid:
-            time.sleep(1)
+    _wait_until_gone(pid)
     os._exit(0)
 
 

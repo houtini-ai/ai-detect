@@ -14,6 +14,16 @@ Previous version: 1.0.0. This is a major version because existing installs are a
 - A mistyped file name given as the positional argument was scored as text.
 - `--compare` with a missing file raised a traceback; non-UTF-8 files raised `UnicodeDecodeError`.
 - An unknown model was only rejected after waiting for the default model to download.
+- Code review, 24 Nov 2026:
+  - A scan waiting on a model whose download failed restarted the download every half second and never reported the failure. A failed download now stays failed until it is asked for again (Retry, `prefetch`, `ai-detect download`, or the next MCP detect call), and the waiting scan ends with the reason.
+  - URL input could be pointed at this machine or the local network, directly or through a redirect. Loopback, private, link-local, carrier-grade NAT, multicast, unspecified and reserved addresses are now refused, for the URL itself and for every request the page makes. `AI_DETECT_ALLOW_PRIVATE_URLS=1` lifts the rule.
+  - The MCP server could wait for ever on an engine that started but printed nothing. The start now has a real deadline (`AI_DETECT_READY_TIMEOUT`), after which the engine is stopped and the call fails with the log's path. The engine's output is read for as long as it runs.
+  - The MCP server attached to any dashboard on the default port, including another version's. It now attaches only to its own version and otherwise starts its own engine.
+  - The URL fetch timeout applied to each step separately, so a fetch could take several times the stated limit. One deadline now covers navigation, settling, scrolling, extraction and the screenshot.
+  - The HTML export showed an empty perplexity figure (it read a key that does not exist). It now shows the document and mean perplexity and both burstiness figures.
+  - Temp files written for uploaded `.html` content were left behind by Compare, and by Scan when the model id was wrong.
+  - On Windows the engine could exit at once, or wait on the wrong handle, when watching for its parent process: the handle functions are now declared with pointer-sized handles, and if the handle cannot be opened the engine polls whether the parent is alive.
+  - A progress listener was left registered after every blocking download.
 
 ### Added
 - A model registry with six detectors: `desklib` (still the default), `light`, `gpttrace-150m`, `gpttrace-1b`, `tabularis`, `conpara`. Each carries its licence, size and RAID rank with source and read date.

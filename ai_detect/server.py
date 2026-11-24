@@ -43,6 +43,7 @@ Run: ai-detect-mcp   (or: python -m ai_detect.server)
 import atexit
 import json
 import os
+import queue
 import socket  # noqa: F401  (C extensions are imported now, on the main thread,
 import ssl  # noqa: F401      before the stdio reader exists; see the note above)
 import subprocess
@@ -124,15 +125,90 @@ def _http(url, body=None, method=None, timeout=30):
 
 
 def _is_engine(url):
+    """True only for an ai-detect engine of this package's own version. Another
+    release's dashboard on the port (an older install left running, say) has a
+    different API and results, so it is not attached to: _start_engine starts
+    its own engine instead, which takes the next free port."""
     try:
-        return "version" in _http(url + "/api/state", timeout=2)
+        state = _http(url + "/api/state", timeout=2)
     except (OSError, ValueError):
         return False
+    return isinstance(state, dict) and state.get("version") == __version__
+
+
+def _spawn_engine(log):
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    return subprocess.Popen(
+        [sys.executable, "-m", "ai_detect.cli", "serve", "--no-browser",
+         "--exit-with-parent", str(os.getpid())],
+        stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=log, creationflags=flags)
+
+
+def _pump(stream, lines, found):
+    """Read the engine's stdout until it closes, on a helper thread. Lines go
+    to ``lines`` until ``found`` is set; after that they are read and dropped,
+    so the engine can never block on a full pipe. None marks the end."""
+    try:
+        for raw in iter(stream.readline, b""):
+            if not found.is_set():
+                lines.put(raw.decode("utf-8", "replace"))
+    except (OSError, ValueError):
+        pass
+    finally:
+        lines.put(None)
+        try:
+            stream.close()
+        except OSError:
+            pass
+
+
+def _await_engine(process, timeout):
+    """The engine's URL once it answers, or '' if it exits or ``timeout``
+    seconds pass first. Never blocks past the deadline on a silent child: the
+    pipe is read by _pump, and this thread only waits on a queue."""
+    marker = "http://127.0.0.1:"
+    lines, found = queue.Queue(), threading.Event()
+    threading.Thread(target=_pump, args=(process.stdout, lines, found),
+                     name="ai-detect-engine-stdout", daemon=True).start()
+    deadline = time.monotonic() + timeout
+    url = ""
+    try:
+        while not url:
+            left = deadline - time.monotonic()
+            if left <= 0:
+                return ""
+            try:
+                line = lines.get(timeout=min(left, 0.25))
+            except queue.Empty:
+                continue
+            if line is None:  # stdout closed: the engine has exited
+                return ""
+            if marker in line:
+                url = marker + line.split(marker, 1)[1].split()[0]
+        while time.monotonic() < deadline:
+            if _is_engine(url):
+                return url
+            if process.poll() is not None:
+                return ""
+            time.sleep(0.2)
+        return ""
+    finally:
+        found.set()
+
+
+def _terminate(process):
+    if process.poll() is None:
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
 
 
 def _start_engine():
-    """Find a running ai-detect dashboard on the default port, or start one.
-    Returns its URL. Blocking; call from a worker thread."""
+    """Find a running ai-detect dashboard of this version on the default port,
+    or start one. Returns its URL. Blocking for at most ENGINE_START_TIMEOUT
+    seconds (plus one 2-second probe); call from a worker thread."""
     with _engine_lock:
         if _engine["url"] and _is_engine(_engine["url"]):
             return _engine["url"]
@@ -142,26 +218,20 @@ def _start_engine():
             return existing
         log_dir = os.environ.get("AI_DETECT_HOME") or os.path.join(os.path.expanduser("~"), ".ai-detect")
         os.makedirs(log_dir, exist_ok=True)
-        log = open(os.path.join(log_dir, "engine.log"), "ab")
-        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-        process = subprocess.Popen(
-            [sys.executable, "-m", "ai_detect.cli", "serve", "--no-browser",
-             "--exit-with-parent", str(os.getpid())],
-            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=log, creationflags=flags)
-        _engine.update(process=process, owned=True)
-        deadline = time.time() + ENGINE_START_TIMEOUT
-        url = ""
-        while time.time() < deadline and process.poll() is None:
-            line = process.stdout.readline().decode("utf-8", "replace")
-            if "http://127.0.0.1:" in line:
-                url = "http://127.0.0.1:" + line.split("http://127.0.0.1:", 1)[1].split()[0]
-                break
-        while url and time.time() < deadline and not _is_engine(url):
-            time.sleep(0.2)
-        if not url or not _is_engine(url):
+        log_path = os.path.join(log_dir, "engine.log")
+        with open(log_path, "ab") as log:  # the child keeps its own handle
+            process = _spawn_engine(log)
+        _engine.update(process=process, owned=True, url="")
+        url = _await_engine(process, ENGINE_START_TIMEOUT)
+        if not url:
+            code = process.poll()
+            _terminate(process)
+            _engine.update(process=None, owned=False, url="")
+            why = (f"it exited with code {code}" if code is not None
+                   else f"it gave no address within {ENGINE_START_TIMEOUT:.0f} seconds and was stopped")
             raise RuntimeError(
-                "ai-detect: the detection engine did not start. See "
-                f"{os.path.join(log_dir, 'engine.log')} for the reason.")
+                f"ai-detect: the detection engine did not start ({why}). See "
+                f"{log_path} for the reason.")
         _engine["url"] = url
         return url
 
@@ -404,6 +474,14 @@ async def detect_ai_url(
     reports visual-shape tells (card grids of three, gradient hero, and so on) and
     saves a screenshot to the dashboard. Fetches only this URL: no crawling, no
     form submission, no sign-in. Needs the [web] extra (Playwright).
+
+    Public internet addresses only. A URL whose host is, or resolves to, a
+    loopback (localhost, 127.0.0.1), private-network (10.x, 172.16-31.x,
+    192.168.x), link-local (169.254.x), carrier-grade NAT, multicast, unspecified
+    or reserved address is refused with an error, IPv4 and IPv6 alike, and so is
+    a redirect or page sub-resource that leads to one. The user can lift this by
+    setting AI_DETECT_ALLOW_PRIVATE_URLS=1 in the server's environment (to scan a
+    site on their own machine or LAN); it cannot be lifted from a tool call.
 
     Args:
         url: An http(s) address.

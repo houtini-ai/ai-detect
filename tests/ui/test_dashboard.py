@@ -205,6 +205,18 @@ def test_unreachable_url_shows_error(page):
     assert unexpected(page) == []
 
 
+def test_private_url_is_refused_with_the_reason(page, monkeypatch):
+    monkeypatch.delenv("AI_DETECT_ALLOW_PRIVATE_URLS")
+    page.click('#scan-form [role="tab"][data-src="url"]')
+    page.fill("#url", "http://127.0.0.1:9/nothing")
+    page.click("#scan-form .primary")
+    page.wait_for_selector(".error", timeout=60000)
+    message = page.inner_text(".error")
+    assert "loopback" in message and "AI_DETECT_ALLOW_PRIVATE_URLS" in message
+    assert not page.is_disabled("#scan-form .primary")
+    assert unexpected(page) == []
+
+
 def test_compare_shows_delta_table(page):
     page.goto(page.url.split("#")[0] + "#/compare")
     page.wait_for_selector("#compare-form")

@@ -11,8 +11,11 @@ stops the publish on failure:
   3. tests      the Python test suite (browser tests excluded)
   4. secrets    no credential-shaped string in any commit on this branch
   5. tarball    `npm pack --dry-run`: only whitelisted files, nothing private
-  6. smoke      pack, install the tarball into an empty temp folder, complete
-                an MCP initialize + tools/list handshake and one tiny scan
+  6. smoke      pack, install the tarball into an empty temp folder whose path
+                contains a space (a global npm install on Windows lands under
+                C:\\Users\\<First Last>\\AppData\\Roaming\\npm\\node_modules\\@houtini),
+                run the CLI launcher (--version), then complete an MCP
+                initialize + tools/list handshake and one tiny scan
 """
 
 import json
@@ -186,14 +189,17 @@ def check_tarball():
 
 
 def check_smoke():
-    step("smoke (pack, install into an empty folder, MCP handshake, one scan)")
+    step("smoke (pack, install into an empty folder with a space in its path, "
+         "launcher --version, MCP handshake, one scan)")
     work = tempfile.mkdtemp(prefix="ai-detect-smoke-")
     try:
         r = run([NPM, "pack", "--ignore-scripts", "--pack-destination", work], shell=os.name == "nt")
         if r.returncode:
             die("npm pack failed:\n" + r.stderr)
         tarball = os.path.join(work, r.stdout.strip().splitlines()[-1])
-        site = os.path.join(work, "site")
+        # The launcher hands uv "<package folder>[extras]". The folder of a real
+        # install has an "@houtini" segment and, for many Windows users, a space.
+        site = os.path.join(work, "First Last", "npm site")
         os.makedirs(site)
         with open(os.path.join(site, "package.json"), "w", encoding="utf-8") as f:
             f.write('{"name": "ai-detect-smoke", "private": true}\n')  # pin npm to this folder
@@ -201,9 +207,20 @@ def check_smoke():
                 cwd=site, shell=os.name == "nt")
         if r.returncode:
             die("npm install of the tarball failed:\n" + r.stderr[-2000:])
-        entry = os.path.join(site, "node_modules", "@houtini", "ai-detect", "bin", "ai-detect-mcp.js")
-        env = {**os.environ, "AI_DETECT_HOME": os.path.join(work, "home"), "AI_DETECT_PORT": "18799",
+        package = os.path.join(site, "node_modules", "@houtini", "ai-detect")
+        entry = os.path.join(package, "bin", "ai-detect-mcp.js")
+        if " " not in package or "@" not in package:
+            die(f"the smoke install path must contain a space and an @scope: {package}")
+        print(f"  installed at: {package}")
+        env = {**os.environ, "AI_DETECT_HOME": os.path.join(work, "home dir"), "AI_DETECT_PORT": "18799",
                "AI_DETECT_DEVICE": "cpu"}
+        r = run(["node", os.path.join(package, "bin", "ai-detect.js"), "--version"], env=env, cwd=site)
+        with open(os.path.join(ROOT, "package.json"), encoding="utf-8") as f:
+            version = json.load(f)["version"]
+        print("  launcher --version: " + (r.stdout.strip() or "(no output)"))
+        if r.returncode or version not in r.stdout:
+            die("the CLI launcher failed from a path with a space and an @scope:\n"
+                + (r.stdout + r.stderr)[-3000:])
         r = run(["node", os.path.join(ROOT, "scripts", "smoke_mcp.mjs"), "node", entry], env=env,
                 cwd=site)
         print("  " + "\n  ".join(r.stdout.strip().splitlines()))

@@ -236,7 +236,7 @@ def to_html(report) -> str:
             continue
         flagged_any = True
         out.append("<div>")
-        out.append("<p>" + html.escape(str(s.get("sentence", ""))) + " — <b class='num'>" + str(int(round(float(prob) * 100))) + "%</b></p>")
+        out.append("<p>" + html.escape(str(s.get("sentence", ""))) + ": <b class='num'>" + str(int(round(float(prob) * 100))) + "%</b></p>")
         why = s.get("why", [])
         if why:
             out.append("<ul>")
@@ -279,8 +279,14 @@ def to_html(report) -> str:
     if perplexity:
         out.append("<section>")
         out.append("<h2>Perplexity</h2>")
-        out.append('<div class="row">Document perplexity: <b class="num">' + html.escape(str(perplexity.get("perplexity", ""))) + "</b></div>")
-        out.append('<div class="row">Burstiness: <b class="num">' + html.escape(str(perplexity.get("burstiness", ""))) + "</b></div>")
+        # Keys as ai_detect/perplexity.py returns them.
+        for row_label, key in (("Document perplexity", "document"),
+                               ("Mean sentence perplexity", "mean"),
+                               ("Burstiness", "burstiness"),
+                               ("Burstiness (coefficient of variation)", "burstiness_cv")):
+            value = perplexity.get(key)
+            shown = "not available" if value is None else str(value)
+            out.append('<div class="row">' + row_label + ': <b class="num">' + html.escape(shown) + "</b></div>")
         if perplexity.get("note"):
             out.append('<p class="note">' + html.escape(str(perplexity.get("note"))) + "</p>")
         out.append("</section>")

@@ -5,6 +5,12 @@ One process-wide manager tracks every model in the registry:
     not_downloaded -> downloading (bytes done / total, percent, ETA) -> ready
                                 \\-> failed (with the reason; call start() to retry)
 
+A failed download stays failed until someone asks for it again: ``start()``
+(the dashboard's Retry button, the MCP prefetch tool and detect tools, the
+``ai-detect download`` command) retries it, ``ensure()`` never does. A job
+that is waiting on a model therefore sees the failure and reports its reason
+instead of restarting the download on every poll.
+
 ``start(model)`` returns at once and downloads in a daemon thread.
 ``download(model)`` blocks and reports through a callback (the CLI's progress
 bar). Downloads resume: huggingface_hub keeps partial files and continues from
@@ -32,6 +38,13 @@ def subscribe(listener):
     _LISTENERS.append(listener)
 
 
+def unsubscribe(listener):
+    try:
+        _LISTENERS.remove(listener)
+    except ValueError:
+        pass
+
+
 def _notify(model_id):
     snapshot = status(model_id)
     for listener in list(_LISTENERS):
@@ -56,6 +69,10 @@ def status(model):
     spec = REGISTRY.resolve(model)
     with _LOCK:
         st = dict(_STATE.get(spec.id) or _blank(spec.id))
+    if st["state"] == "failed" and is_model_cached(spec.id):
+        # Fetched some other way since (the CLI in another process, say): the
+        # old failure no longer describes anything.
+        st.update(state="ready", error=None)
     if st["state"] not in ("downloading", "failed"):
         st["state"] = "ready" if is_model_cached(spec.id) else "not_downloaded"
     total = st["bytes_total"] or spec.approx_mb * 1024 * 1024
@@ -80,7 +97,8 @@ def status(model):
         out["message"] = f"Downloading {spec.id} ({size}): {percent:.0f}%{left}."
     elif st["state"] == "failed":
         out["message"] = (f"The {spec.id} download failed: {st['error']}. It can be retried "
-                          "and will resume from where it stopped.")
+                          "and will resume from where it stopped: use Retry on the dashboard's "
+                          f"Models page, the prefetch tool, or `ai-detect download {spec.id}`.")
     else:
         out["message"] = (f"{spec.id} is not downloaded yet ({size}, one time). It downloads "
                           "on first use, or fetch it now with the prefetch tool or "
@@ -145,8 +163,19 @@ def download(model, on_progress=None):
     """Download a model's files, blocking. Returns the final status dict.
     Raises nothing: a failure is recorded and returned with status 'failed'."""
     spec = REGISTRY.resolve(model)
+    def listener(s):
+        if s["model"] == spec.id:
+            on_progress(s)
+
     if on_progress:
-        subscribe(lambda s: s["model"] == spec.id and on_progress(s))
+        subscribe(listener)
+    try:
+        return _download(spec)
+    finally:
+        unsubscribe(listener)
+
+
+def _download(spec):
     with _LOCK:
         _STATE[spec.id] = {**_blank(spec.id), "state": "downloading", "started": time.time()}
     try:
@@ -176,7 +205,8 @@ def download(model, on_progress=None):
 
 
 def start(model):
-    """Begin a background download if one is needed. Returns status at once."""
+    """Begin a background download if one is needed. Returns status at once.
+    This is the explicit request: it also retries a download that failed."""
     spec = REGISTRY.resolve(model)
     if is_model_cached(spec.id):
         return status(spec.id)
@@ -193,6 +223,13 @@ def start(model):
 
 def ensure(models):
     """For a list of model ids: start any missing download and return
-    (all_ready, [status, ...])."""
-    statuses = [start(m) for m in models]
+    (all_ready, [status, ...]).
+
+    A model whose last download failed is NOT started again: its status comes
+    back as 'failed' with the reason, so a caller polling this sees the failure.
+    Only start() retries."""
+    statuses = []
+    for model in models:
+        current = status(model)
+        statuses.append(current if current["status"] == "failed" else start(model))
     return all(s["status"] == "ready" for s in statuses), statuses

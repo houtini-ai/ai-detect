@@ -339,6 +339,14 @@ reports visual-shape tells (card grids of three, gradient hero, and so on) and
 saves a screenshot to the dashboard. Fetches only this URL: no crawling, no
 form submission, no sign-in. Needs the [web] extra (Playwright).
 
+Public internet addresses only. A URL whose host is, or resolves to, a
+loopback (localhost, 127.0.0.1), private-network (10.x, 172.16-31.x,
+192.168.x), link-local (169.254.x), carrier-grade NAT, multicast, unspecified
+or reserved address is refused with an error, IPv4 and IPv6 alike, and so is
+a redirect or page sub-resource that leads to one. The user can lift this by
+setting AI_DETECT_ALLOW_PRIVATE_URLS=1 in the server's environment (to scan a
+site on their own machine or LAN); it cannot be lifted from a tool call.
+
 Args:
     url: An http(s) address.
     model: A model id or comma-separated ids (ensemble). Default 'desklib'.
@@ -538,6 +546,8 @@ When a needed model is not on disk the same tools return, at once:
 - A detect, compare or batch call whose model is not on disk starts the download in the background and returns at once with `status: "downloading"`, per-model `bytes_done`, `bytes_total`, `percent`, `eta_seconds`, the `dashboard_url`, and a `message` to relay. Calling again later returns the result.
 - `get_model_status` gives the same fields for any model. `status` is `ready`, `downloading`, `absent` or `failed`; `state` says `not_downloaded` instead of `absent`. A failure carries the reason in `error`.
 - `prefetch` starts a download ahead of time (`model` id or `all`). Calling it again after a failure resumes: huggingface_hub keeps partial files.
+- A failed download stays `failed` until it is asked for again. A scan that was waiting on it ends with the reason. The retry is always an explicit request: Retry on the Models page, `prefetch`, `ai-detect download <model>`, or simply the next MCP detect, compare or batch call, which starts the download again and answers `downloading`.
+- The MCP server attaches to a dashboard already running on the default port only if it reports this package's version. Otherwise it starts its own engine on the next free port.
 - While a scan runs the server sends MCP progress notifications if the client supplied a `progressToken`. On SDK 1.x it also sends a log notification per stage. On SDK 2.x it does not, because that SDK marks the logging capability deprecated (its warning cites SEP-2577, 28 Jul 2026).
 - Verified by test: a real 126 MB download into an empty cache reported rising percentages and an ETA, then `ready`. The download-then-retry flow in the web UI is covered by the browser tests with a simulated download. A real multi-GB download through an MCP client was not run.
 
@@ -649,7 +659,29 @@ At most 12 instances of one tell are listed; the summary counts all. The rules a
 
 ## 8. URL fetching
 
-One page per call, through Playwright's Chromium with a current desktop Chrome user agent and JavaScript rendered. It follows that URL's own redirects and loads its sub-resources. It does not crawl, click, type, submit forms or sign in; downloads are refused; dialogs are dismissed. Default timeout 30 seconds. The article is taken from `<article>`/`<main>` or the container with the most paragraph text; navigation, headers, footers, sidebars, cookie banners, author boxes and code blocks are dropped; headings, paragraphs, lists, bold lead-ins, tables and captions are kept. A full-page JPEG is saved (clipped at 16,000 px). Without Playwright the error message gives the two install commands.
+One page per call, through Playwright's Chromium with a current desktop Chrome user agent and JavaScript rendered. It follows that URL's own redirects and loads its sub-resources. It does not crawl, click, type, submit forms or sign in; downloads are refused; dialogs are dismissed; a page cannot open a second window. Default timeout 30 seconds: one deadline, started when the browser is up, covers navigation, settling, scrolling, extraction and the screenshot together. The article is taken from `<article>`/`<main>` or the container with the most paragraph text; navigation, headers, footers, sidebars, cookie banners, author boxes and code blocks are dropped; headings, paragraphs, lists, bold lead-ins, tables and captions are kept. A full-page JPEG is saved (clipped at 16,000 px). Without Playwright the error message gives the two install commands.
+
+**Public addresses only.** A URL is refused, before a browser starts, when its host is or resolves to an address that is not on the public internet:
+
+| Refused | Examples |
+|---|---|
+| Loopback | `localhost`, `*.localhost`, `127.0.0.0/8`, `::1` |
+| Private networks | `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `fc00::/7` |
+| Link-local | `169.254.0.0/16` (cloud metadata services live here), `fe80::/10` |
+| Carrier-grade NAT | `100.64.0.0/10` |
+| Multicast, unspecified, reserved | `224.0.0.0/4`, `ff00::/8`, `0.0.0.0`, `::`, `240.0.0.0/4` |
+
+An IPv4 address carried inside an IPv6 one (`::ffff:127.0.0.1`, 6to4, NAT64) is judged by the IPv4 rules. A name with several addresses is refused if any one of them is in the table. The same rule runs inside the browser on every request the page makes, redirect hops included, so a public page cannot redirect the fetch to this machine, the local network or a metadata service, and cannot load them as images, frames or script requests. It applies to the CLI, the web UI and the MCP tools alike, and to the sub-resources of a local `.html` file (the file itself still renders).
+
+The error names the address and the reason, for example:
+
+```
+Refused to fetch http://localhost:8765/: localhost is a loopback address (this machine). ai-detect only fetches public internet addresses, so a page cannot be used to reach this machine or the local network. To scan a site on your own machine or LAN, set AI_DETECT_ALLOW_PRIVATE_URLS=1 in the environment ai-detect runs in and start it again.
+```
+
+`AI_DETECT_ALLOW_PRIVATE_URLS=1` turns the rule off. It is read from the environment of the process that does the fetching (for MCP, the server's `env` block); no tool argument or web UI control can set it.
+
+Limits: the check and the browser each resolve the name, so a DNS answer that changes between the two (DNS rebinding) is not caught; a name that does not resolve on this machine is left for the browser to fail on; WebSocket connections are not inspected.
 
 ## 9. Environment variables
 
@@ -659,7 +691,8 @@ One page per call, through Playwright's Chromium with a current desktop Chrome u
 | `AI_DETECT_PORT` | First dashboard port to try (default 8765) |
 | `AI_DETECT_HOME` | Folder for history and the engine log (default `~/.ai-detect`) |
 | `AI_DETECT_HISTORY` | `off` keeps scans in memory only |
-| `AI_DETECT_READY_TIMEOUT` | Seconds the MCP server waits for its engine to start (default 60) |
+| `AI_DETECT_READY_TIMEOUT` | Seconds the MCP server waits for its engine to start (default 60). If the engine gives no address in that time it is stopped and the tool call fails with the log's path |
+| `AI_DETECT_ALLOW_PRIVATE_URLS` | `1` lets URL scans reach loopback, private-network and other non-public addresses (section 8). Off by default |
 | `AI_DETECT_EXTRAS` | npm launcher only: pip extras to install (default `light`) |
 | `HF_HOME`, `HF_HUB_CACHE` | Standard Hugging Face variables; they move the model cache |
 

@@ -41,6 +41,9 @@ def ctl():
 @pytest.fixture(scope="session")
 def base_url(ctl, tmp_path_factory):
     os.environ["AI_DETECT_HOME"] = str(tmp_path_factory.mktemp("home"))
+    # The fixture pages are served from 127.0.0.1 (see ``site``). The fetcher
+    # refuses loopback and private addresses unless this is set.
+    os.environ["AI_DETECT_ALLOW_PRIVATE_URLS"] = "1"
     from ai_detect import analyze, downloads
     from ai_detect.models import REGISTRY
     from ai_detect.web import server
