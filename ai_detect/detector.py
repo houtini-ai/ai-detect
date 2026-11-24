@@ -354,4 +354,6 @@ def classify_text(text, model=DEFAULT_MODEL, device=None, detector=None):
         model_id = getattr(detector, "name", model)
     document = to_document(text)
     rows, passages = score_document(document, {model_id: detector})
-    return build_report(document, rows, passages, model_id)
+    report = build_report(document, rows, passages, model_id)
+    from .ensemble import annotate  # late import: ensemble builds on this module
+    return annotate(report, rows, passages, [model_id])

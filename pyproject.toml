@@ -1,39 +1,54 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-detect"
-version = "1.0.0"
-description = "Per-sentence AI-text detection with pattern diagnostics — CLI and MCP server."
+dynamic = ["version"]
+description = "Local AI-text detection: per-sentence scores from open detectors, pattern diagnostics, a CLI, an MCP server and a local web UI."
 readme = "README.md"
-requires-python = ">=3.9"
-license = { text = "MIT" }
+# Current torch, transformers and onnxruntime all require Python 3.11+
+# (PyPI requires_python, read 24 Nov 2026).
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE", "ai_detect/_vendor/LICENSE-conpara"]
 authors = [{ name = "Richard Baxter", email = "richard@houtini.com" }]
-keywords = ["ai-detection", "ai-text-detector", "deberta", "raid", "mcp", "mcp-server", "nlp"]
+keywords = ["ai-detection", "ai-text-detector", "deberta", "modernbert", "raid", "mcp", "mcp-server", "nlp"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Topic :: Text Processing :: Linguistic",
 ]
 dependencies = [
-    "torch>=2.0",
-    "transformers>=4.40",
-    "huggingface-hub>=0.20",
-    "numpy>=1.24",
-    "mcp>=1.0",
-    # Used directly by the MCP server to run blocking detection off the event loop.
+    "torch>=2.6",
+    "transformers>=4.48",
+    "tokenizers>=0.20",
+    "huggingface-hub>=0.26",
+    "numpy>=1.26",
+    # Both SDK lines are supported: 1.x (mcp.server.fastmcp.FastMCP) and
+    # 2.x (mcp.server.mcpserver.MCPServer). See ai_detect/server.py.
+    "mcp>=1.10,<3",
+    # Used directly: blocking detection is run off the event loop.
     "anyio>=4.0",
+    # The local web UI. Both are already dependencies of the MCP SDK.
+    "starlette>=0.40",
+    "uvicorn>=0.31",
 ]
 
 [project.optional-dependencies]
-# Small/fast ONNX detector (`--model light`).
-light = ["onnxruntime>=1.17"]
-# GPU execution provider for the light ONNX model on Windows.
-gpu-directml = ["onnxruntime-directml>=1.17"]
-dev = ["pytest>=7"]
+# ONNX Runtime: needed by the light, gpttrace-150m and gpttrace-1b models.
+light = ["onnxruntime>=1.20"]
+onnx = ["onnxruntime>=1.20"]
+# GPU execution provider for the ONNX models on Windows.
+gpu-directml = ["onnxruntime-directml>=1.20"]
+# The DeBERTa-ConPara model needs a SentencePiece tokenizer.
+conpara = ["sentencepiece>=0.2", "protobuf>=5"]
+# URL input: fetch and render a page with headless Chromium.
+# After installing, run once:  playwright install chromium
+web = ["playwright>=1.48"]
+all = ["onnxruntime>=1.20", "sentencepiece>=0.2", "protobuf>=5", "playwright>=1.48"]
+dev = ["pytest>=8"]
 
 [project.urls]
 Homepage = "https://github.com/houtini-ai/ai-detect"
@@ -44,7 +59,15 @@ Repository = "https://github.com/houtini-ai/ai-detect"
 ai-detect = "ai_detect.cli:main"
 ai-detect-mcp = "ai_detect.server:main"
 
-[tool.setuptools]
-packages = ["ai_detect"]
-# detect.py is an in-repo convenience shim, not an installed top-level module
-# (a bare `detect` name would risk colliding with other packages).
+[tool.setuptools.dynamic]
+version = { attr = "ai_detect._version.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["ai_detect*"]
+
+[tool.setuptools.package-data]
+ai_detect = ["web/static/*", "_vendor/LICENSE-conpara", "assets/*.js"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["browser: needs Playwright and Chromium", "model: downloads and runs a real model"]

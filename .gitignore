@@ -57,3 +57,6 @@ credentials.json
 *.apikey
 config.local.*
 settings.local.*
+
+# Evaluation texts fetched or generated locally (other people's writing; never committed)
+eval_cache/

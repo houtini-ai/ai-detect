@@ -1,0 +1,29 @@
+{
+ "note": "Same fact written twice: formal, then conversational. Pairs 1-12 are the ones documented in docs/detection-patterns.md (February 2026, desklib). Pairs 13-24 were added for the November 2026 evaluation.",
+ "pairs": [
+  {"formal": "The software has been significantly improved.", "casual": "Software's got a lot better."},
+  {"formal": "Fanatec is not the cheapest option available.", "casual": "Fanatec aren't cheap."},
+  {"formal": "They have partnered with several leading automotive brands.", "casual": "They've partnered with Porsche, BMW, Bentley and the WRC."},
+  {"formal": "The QR2 provides excellent stability.", "casual": "The QR2 doesn't flex."},
+  {"formal": "Fanatec offers comprehensive software support.", "casual": "The app's actually pretty good now."},
+  {"formal": "The base delivers impressive performance.", "casual": "It's genuinely impressive for what you're paying."},
+  {"formal": "The range encompasses multiple price points.", "casual": "It ranges from basic stuff to high-end."},
+  {"formal": "For PC-only buyers who don't need console support, Moza offer better value.", "casual": "If you don't care about PlayStation, Moza will save you money."},
+  {"formal": "Additionally, the QR2 provides excellent stability under load.", "casual": "The QR2 doesn't flex and I haven't seen much disagreement on that."},
+  {"formal": "In conclusion, Fanatec remains a strong choice for most buyers.", "casual": "Look, Fanatec make good kit."},
+  {"formal": "It's important to note that prices vary by region.", "casual": "Prices vary by region, obviously."},
+  {"formal": "This represents a significant upgrade over the previous version.", "casual": "Massive upgrade over the old version."},
+  {"formal": "The device features a robust aluminium chassis that ensures long-term durability.", "casual": "The case is aluminium and mine's survived two years of being kicked."},
+  {"formal": "Furthermore, the interface enables users to navigate a wide range of settings.", "casual": "The menus are fine once you find the one setting you need."},
+  {"formal": "Regular maintenance is essential to ensure optimal performance.", "casual": "Clean it every few weeks or it starts to grind."},
+  {"formal": "The team has implemented numerous improvements to enhance reliability.", "casual": "They've fixed the two bugs that kept crashing it."},
+  {"formal": "This solution leverages cutting-edge technology to streamline your workflow.", "casual": "It saves me about ten minutes a day, which is why I kept it."},
+  {"formal": "Users will benefit from a seamless and intuitive experience.", "casual": "My mum worked it out without ringing me."},
+  {"formal": "The battery provides approximately eight hours of continuous operation.", "casual": "I get about eight hours out of the battery, less if it's cold."},
+  {"formal": "It is worth noting that the installation process is straightforward.", "casual": "Took me twenty minutes to fit and I'm not handy."},
+  {"formal": "The company has established itself as a leader in the industry.", "casual": "Everyone I know who races uses their stuff."},
+  {"formal": "Moreover, the product demonstrates exceptional value for money.", "casual": "For two hundred quid I can't really complain."},
+  {"formal": "The camera delivers outstanding image quality in various lighting conditions.", "casual": "Photos look great outside and a bit grainy in the pub."},
+  {"formal": "Overall, this represents an excellent choice for both beginners and professionals.", "casual": "I'd buy it again, and I've told my brother to get one."}
+ ]
+}

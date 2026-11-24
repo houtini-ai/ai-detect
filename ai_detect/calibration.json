@@ -1,0 +1,161 @@
+{
+ "_about": "Per-model operating points fitted by scripts/calibrate_ensemble.py on the local evaluation corpus. threshold = logit margin exceeded by 5% of human items; scale = robust spread of human margins. See docs/MODEL-EVAL-2026-11.md.",
+ "fitted": "2026-11-24",
+ "device": "cpu",
+ "target_fpr": 0.05,
+ "corpus": {
+  "passages": 56,
+  "sentences": 725,
+  "human_passages": 25,
+  "ai_passages": 31
+ },
+ "method": "mean calibrated probability",
+ "models": {
+  "desklib": {
+   "sentence": {
+    "threshold": 3.31,
+    "scale": 1.382
+   },
+   "passage": {
+    "threshold": 1.221,
+    "scale": 2.225
+   }
+  },
+  "light": {
+   "sentence": {
+    "threshold": 3.919,
+    "scale": 2.17
+   },
+   "passage": {
+    "threshold": 4.032,
+    "scale": 1.571
+   }
+  },
+  "gpttrace-150m": {
+   "sentence": {
+    "threshold": 4.277,
+    "scale": 2.529
+   },
+   "passage": {
+    "threshold": 1.328,
+    "scale": 1.53
+   }
+  },
+  "gpttrace-1b": {
+   "sentence": {
+    "threshold": 5.988,
+    "scale": 4.915
+   },
+   "passage": {
+    "threshold": 7.093,
+    "scale": 2.164
+   }
+  },
+  "tabularis": {
+   "sentence": {
+    "threshold": 3.031,
+    "scale": 1.977
+   },
+   "passage": {
+    "threshold": 1.599,
+    "scale": 4.136
+   }
+  },
+  "conpara": {
+   "sentence": {
+    "threshold": 3.336,
+    "scale": 2.968
+   },
+   "passage": {
+    "threshold": 3.093,
+    "scale": 5.357
+   }
+  }
+ },
+ "held_out_comparison": {
+  "sentence": {
+   "single: gpttrace-1b": {
+    "auroc": 0.838,
+    "tpr_at_5pct_fpr": 0.4403
+   },
+   "mean raw probability": {
+    "auroc": 0.8335,
+    "tpr_at_5pct_fpr": 0.3278
+   },
+   "mean calibrated probability": {
+    "auroc": 0.8307,
+    "tpr_at_5pct_fpr": 0.405
+   },
+   "median calibrated probability": {
+    "auroc": 0.8187,
+    "tpr_at_5pct_fpr": 0.386
+   },
+   "vote share (models over threshold)": {
+    "auroc": 0.7345,
+    "tpr_at_5pct_fpr": 0.3067
+   },
+   "single: gpttrace-150m": {
+    "auroc": 0.7318,
+    "tpr_at_5pct_fpr": 0.2921
+   },
+   "single: desklib": {
+    "auroc": 0.722,
+    "tpr_at_5pct_fpr": 0.2047
+   },
+   "single: conpara": {
+    "auroc": 0.72,
+    "tpr_at_5pct_fpr": 0.1711
+   },
+   "single: tabularis": {
+    "auroc": 0.7126,
+    "tpr_at_5pct_fpr": 0.2208
+   },
+   "single: light": {
+    "auroc": 0.6594,
+    "tpr_at_5pct_fpr": 0.1579
+   }
+  },
+  "passage": {
+   "single: gpttrace-1b": {
+    "auroc": 0.9988,
+    "tpr_at_5pct_fpr": 1.0
+   },
+   "single: conpara": {
+    "auroc": 0.9986,
+    "tpr_at_5pct_fpr": 0.9907
+   },
+   "median calibrated probability": {
+    "auroc": 0.9972,
+    "tpr_at_5pct_fpr": 0.9899
+   },
+   "single: desklib": {
+    "auroc": 0.9969,
+    "tpr_at_5pct_fpr": 0.9813
+   },
+   "mean calibrated probability": {
+    "auroc": 0.9958,
+    "tpr_at_5pct_fpr": 0.9855
+   },
+   "vote share (models over threshold)": {
+    "auroc": 0.9957,
+    "tpr_at_5pct_fpr": 0.985
+   },
+   "single: tabularis": {
+    "auroc": 0.9953,
+    "tpr_at_5pct_fpr": 0.9824
+   },
+   "mean raw probability": {
+    "auroc": 0.9941,
+    "tpr_at_5pct_fpr": 0.9744
+   },
+   "single: gpttrace-150m": {
+    "auroc": 0.971,
+    "tpr_at_5pct_fpr": 0.9178
+   },
+   "single: light": {
+    "auroc": 0.9559,
+    "tpr_at_5pct_fpr": 0.8342
+   }
+  }
+ }
+}
