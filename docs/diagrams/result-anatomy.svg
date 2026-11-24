@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-labelledby="t d" font-family="'Schibsted Grotesk','Segoe UI',system-ui,sans-serif">
+  <title id="t">Anatomy of an ai-detect result page</title>
+  <desc id="d">A schematic of the result screen with six numbered parts: the verdict, the document score and confidence, the breakdown bar, the view switch, the highlighted text, and the details panel.</desc>
+  <style>
+    .bg{fill:#fafafa}.fr{fill:#fff;stroke:#d4d4d8}.h{font-size:14px;font-weight:700;fill:#18181b}.p{font-size:12px;fill:#52525b}.s{font:500 26px Georgia,serif;fill:#18181b}
+    .k{font:600 10px 'JetBrains Mono',ui-monospace,Consolas,monospace;letter-spacing:.08em;fill:#71717a}.n{font:500 20px 'JetBrains Mono',ui-monospace,Consolas,monospace;fill:#18181b}
+    .c{fill:#0f7a5a}.ct{font:700 12px 'JetBrains Mono',ui-monospace,Consolas,monospace;fill:#fff}.t{fill:#d4d4d8}.rule{stroke:#e4e4e7}.ld{stroke:#0f7a5a;stroke-width:1;fill:none}
+  </style>
+  <rect class="bg" width="960" height="600"/>
+  <rect class="fr" x="24" y="24" width="640" height="552" rx="8"/>
+  <!-- verdict strip -->
+  <text class="k" x="48" y="62">TITLE · SOURCE</text><text class="s" x="48" y="98">Uncertain</text>
+  <text class="k" x="270" y="72">DOCUMENT SCORE</text><text class="n" x="270" y="98">51.9%</text>
+  <text class="k" x="400" y="72">CONFIDENCE</text><text class="n" x="400" y="98">low</text>
+  <rect x="500" y="84" width="60" height="8" fill="#e0a43a"/><rect x="560" y="84" width="80" height="8" fill="#0f7a5a"/>
+  <line class="rule" x1="48" y1="120" x2="640" y2="120"/>
+  <!-- toolbar -->
+  <rect x="48" y="134" width="150" height="24" rx="5" fill="none" stroke="#a1a1aa"/><rect x="48" y="134" width="46" height="24" rx="5" fill="#18181b"/>
+  <text class="p" x="58" y="150" fill="#fff" style="fill:#fff">Text</text><text class="p" x="102" y="150">Sentences</text><text class="p" x="166" y="150">Page</text>
+  <rect x="520" y="134" width="120" height="24" rx="5" fill="none" stroke="#a1a1aa"/><text class="p" x="532" y="150">HTML · CSV · JSON</text>
+  <!-- text -->
+  <g><rect x="48" y="186" width="250" height="12" fill="#f3d6a4"/><rect x="302" y="186" width="96" height="12" class="t"/>
+     <rect x="48" y="206" width="180" height="12" class="t"/><rect x="232" y="206" width="166" height="12" fill="#f0a9a0"/>
+     <rect x="48" y="226" width="350" height="12" fill="#f0a9a0"/><rect x="48" y="246" width="210" height="12" class="t"/>
+     <rect x="48" y="286" width="350" height="12" class="t"/><rect x="48" y="306" width="120" height="12" class="t"/><rect x="172" y="306" width="226" height="12" fill="#f3d6a4"/>
+     <rect x="48" y="326" width="290" height="12" class="t"/><rect x="48" y="366" width="350" height="12" class="t"/><rect x="48" y="386" width="260" height="12" class="t"/>
+     <rect x="42" y="282" width="2" height="60" fill="#0f7a5a"/></g>
+  <!-- side panel -->
+  <line class="rule" x1="420" y1="176" x2="420" y2="552"/>
+  <text class="p" x="436" y="196" style="font-weight:700;fill:#18181b">Sentence</text><text class="p" x="500" y="196">Tells</text><text class="p" x="540" y="196">Rewrite</text><text class="p" x="592" y="196">Models</text>
+  <line x1="436" y1="204" x2="490" y2="204" stroke="#0f7a5a" stroke-width="2"/>
+  <text class="k" x="436" y="234">MODEL SCORES</text>
+  <g class="p"><text x="436" y="256">gpttrace-1b</text><text x="600" y="256">62%</text><text x="436" y="276">conpara</text><text x="600" y="276">48%</text><text x="436" y="296">desklib</text><text x="600" y="296">55%</text><text x="436" y="316">agreement</text><text x="592" y="316">2 of 3</text></g>
+  <text class="k" x="436" y="350">WHY</text><rect x="436" y="362" width="200" height="10" class="t"/><rect x="436" y="380" width="160" height="10" class="t"/>
+  <text class="k" x="436" y="420">REWRITE</text><rect x="436" y="432" width="200" height="10" class="t"/><rect x="436" y="450" width="120" height="10" class="t"/>
+  <!-- callouts -->
+  <g><circle class="c" cx="40" cy="92" r="11"/><text class="ct" x="36" y="96">1</text></g>
+  <g><circle class="c" cx="262" cy="92" r="11"/><text class="ct" x="258" y="96">2</text></g>
+  <g><circle class="c" cx="492" cy="88" r="11"/><text class="ct" x="488" y="92">3</text></g>
+  <g><circle class="c" cx="40" cy="146" r="11"/><text class="ct" x="36" y="150">4</text></g>
+  <g><circle class="c" cx="40" cy="232" r="11"/><text class="ct" x="36" y="236">5</text></g>
+  <g><circle class="c" cx="428" cy="240" r="11"/><text class="ct" x="424" y="244">6</text></g>
+  <!-- legend -->
+  <g transform="translate(690 40)">
+    <text class="h" y="14">1  Verdict first</text><text class="p" y="32">Likely AI, Uncertain or Likely human.</text>
+    <text class="h" y="72">2  Score and confidence</text><text class="p" y="90">The document score, calibrated. Low</text><text class="p" y="106">confidence when the text is short, the</text><text class="p" y="122">score is near 50% or models disagree.</text>
+    <text class="h" y="162">3  Breakdown</text><text class="p" y="180">Share of words in sentences that read</text><text class="p" y="196">as AI, uncertain or human.</text>
+    <text class="h" y="236">4  Three views</text><text class="p" y="254">Text, a sentence table with one column</text><text class="p" y="270">per model, and the page screenshot.</text>
+    <text class="h" y="310">5  Highlighted text</text><text class="p" y="328">Amber to red by score, with an underline</text><text class="p" y="344">that changes too. The green bar marks</text><text class="p" y="360">the block a selected tell points at.</text>
+    <text class="h" y="400">6  Details</text><text class="p" y="418">Per-model scores for the sentence, the</text><text class="p" y="434">reasons, rewrite suggestions, the tells</text><text class="p" y="450">list, model facts, other signals.</text>
+  </g>
+</svg>

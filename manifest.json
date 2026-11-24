@@ -19,7 +19,19 @@
   "icon": "assets/icon.png",
   "server": {
     "type": "uv",
-    "entry_point": "mcpb_entry.py"
+    "entry_point": "mcpb_entry.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "${__dirname}",
+        "--extra",
+        "light",
+        "mcpb_entry.py"
+      ],
+      "env": {}
+    }
   },
   "tools": [
     {

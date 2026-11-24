@@ -349,7 +349,7 @@ def _list_tells(c, blocks, items, paragraphs, words_total):
             c.add("bold_lead_bullets", "structure", "Bold lead-in bullets", "high",
                   "If each label needs a sentence, these are sub-headings with paragraphs. "
                   "If not, a plain list will do.",
-                  f"{led[0][1].meta['bold_lead']}: {_snip(led[0][1].text, width=90)}",
+                  _snip(led[0][1].text, width=90),
                   block=led[0][0], blocks=[i for i, _ in led],
                   detail=f"{len(led)} of {len(members)} items open with a bold label.")
         emoji = [(i, b) for i, b in members
@@ -372,7 +372,7 @@ def _list_tells(c, blocks, items, paragraphs, words_total):
         c.add("bold_lead_paragraphs", "structure", "Bold lead-in paragraphs", "medium",
               "A paragraph that opens with a bold label is a heading. Make it one, or "
               "write the paragraph without the label.",
-              f"{led_paras[0][1].meta['bold_lead']}: {_snip(led_paras[0][1].text, width=90)}",
+              _snip(led_paras[0][1].text, width=90),
               block=led_paras[0][0], blocks=[i for i, _ in led_paras])
     list_words = sum(len(b.text.split()) for _, b in items)
     if len(items) >= 8 and list_words / words_total >= 0.4:

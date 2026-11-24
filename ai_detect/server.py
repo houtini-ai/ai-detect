@@ -59,8 +59,10 @@ import anyio.to_thread
 
 try:  # MCP Python SDK 2.x
     from mcp.server.mcpserver import Context, MCPServer as _Server
+    _LOG_NOTIFICATIONS = False  # SDK 2.x marks the logging capability deprecated (SEP-2577)
 except ImportError:  # SDK 1.x
     from mcp.server.fastmcp import Context, FastMCP as _Server
+    _LOG_NOTIFICATIONS = True
 
 try:
     from mcp.types import ToolAnnotations
@@ -223,7 +225,8 @@ async def _ensure_models(model_ids):
 
 async def _notify(ctx, progress):
     """Forward engine progress to the client: a progress notification when it
-    sent a progressToken (the SDK drops it otherwise) and a log line either way."""
+    sent a progressToken (the SDK drops it otherwise), plus a log notification on
+    SDK 1.x. SDK 2.x deprecates the logging capability, so none is sent there."""
     if ctx is None:
         return
     stage, model = progress.get("stage", ""), progress.get("model", "")
@@ -231,7 +234,8 @@ async def _notify(ctx, progress):
     message = f"{stage} {model}".strip()
     try:
         await ctx.report_progress(index + (0.5 if stage == "scoring" else 0), of, message)
-        await ctx.info(f"ai-detect: {message}")
+        if _LOG_NOTIFICATIONS:
+            await ctx.info(f"ai-detect: {message}")
     except Exception:
         pass  # a client that takes no notifications must not break a scan
 

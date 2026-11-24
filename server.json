@@ -51,40 +51,6 @@
           "format": "string"
         }
       ]
-    },
-    {
-      "registryType": "pypi",
-      "identifier": "ai-detect",
-      "version": "2.0.0",
-      "transport": {
-        "type": "stdio"
-      },
-      "environmentVariables": [
-        {
-          "name": "AI_DETECT_DEVICE",
-          "description": "Compute device: auto (default), cpu or cuda.",
-          "isRequired": false,
-          "format": "string"
-        },
-        {
-          "name": "AI_DETECT_PORT",
-          "description": "First port to try for the local dashboard (default 8765; the next free port is used if busy).",
-          "isRequired": false,
-          "format": "string"
-        },
-        {
-          "name": "AI_DETECT_HISTORY",
-          "description": "Set to off to stop saving scans to disk.",
-          "isRequired": false,
-          "format": "string"
-        },
-        {
-          "name": "AI_DETECT_HOME",
-          "description": "Folder for scan history and the engine log (default ~/.ai-detect).",
-          "isRequired": false,
-          "format": "string"
-        }
-      ]
     }
   ]
 }

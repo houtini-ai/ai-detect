@@ -1,0 +1,4 @@
+examples/ai-sample.txt
+examples/human-sample.txt
+# a path that does not exist:
+examples/missing-file.txt

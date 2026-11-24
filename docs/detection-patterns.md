@@ -1,11 +1,13 @@
 # The signs of AI writing, measured
 
+> **Notice, 24 Nov 2026.** The figures on this page were measured in February 2026. They have not been re-measured and the headline pair did not reproduce: on 24 Nov 2026 `desklib` scored "The software has been significantly improved" at 91.9% and "Software's got a lot better" at 79.7%, not 0.03%. The direction of each pattern still holds (desklib ranked the formal sentence higher in 23 of 24 pairs; GPTTrace-1B scored that pair 98.9% and 0.2%), but do not quote these percentages. desklib was first on RAID when submitted in February 2025 and 42nd of 61 on 24 Nov 2026. See [MODEL-EVAL-2026-11.md](MODEL-EVAL-2026-11.md).
+
 The eight structural patterns below are what actually move an AI detector, ranked by how hard they hit. Missing contractions are the single strongest signal: "The software has been significantly improved" scores **92.6% AI**, while "software's got a lot better" — the same fact, contracted — scores **0.03%**. Formal verbs are next: "provides excellent stability" scores 99.6%, "doesn't flex" scores 0.01%. Every number here comes from a paired test, the same information written twice.
 
 The finding underneath all of it: **detectors have learned what clean, balanced, professional prose looks like, because that's what AI writes.** Formality is the tell, not vocabulary. There's no word list to avoid.
 
 **Tested:** 70+ paired sentence variations, February 2026
-**Model:** desklib/ai-text-detector-v1.01 (DeBERTa-v3-large, 304M parameters, RAID benchmark #1)
+**Model:** desklib/ai-text-detector-v1.01 (DeBERTa-v3-large, 434M parameters, first on RAID when submitted in February 2025)
 **Previous model:** dejanseo/ai-cop (DeBERTa-v3-small fine-tune) — replaced 2026-02-16
 **Tool:** `ai-detect` (see the [README](../README.md)) — run any of these yourself
 

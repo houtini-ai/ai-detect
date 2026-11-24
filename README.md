@@ -6,13 +6,13 @@
 
 [![MCP](https://img.shields.io/badge/Model_Context_Protocol-server-8b5cf6?style=flat-square)](https://modelcontextprotocol.io)
 [![Model](https://img.shields.io/badge/model-DeBERTa--v3-5b5fff?style=flat-square)](https://huggingface.co/desklib/ai-text-detector-v1.01)
-[![Python](https://img.shields.io/badge/python-%E2%89%A53.9-3776ab?style=flat-square&logo=python&logoColor=white)](https://www.python.org)
+[![Python](https://img.shields.io/badge/python-%E2%89%A53.11-3776ab?style=flat-square&logo=python&logoColor=white)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Known Vulnerabilities](https://snyk.io/test/github/houtini-ai/ai-detect/badge.svg)](https://snyk.io/test/github/houtini-ai/ai-detect)
 
 **Is the copy you're buying handwritten? Find out, free and at scale.**
 
-ai-detect is a free, open source AI text detector that runs entirely on your own hardware. It scores writing sentence by sentence using [desklib/ai-text-detector-v1.01](https://huggingface.co/desklib/ai-text-detector-v1.01), a 304-million-parameter DeBERTa-v3-large model that ranked first on the RAID detection benchmark. There is no API key, no per-word pricing and no upload: after a one-off 1.7 GB model download it works offline, on CPU or GPU. It ships as a command-line tool, a Python package and an MCP server, under the MIT licence.
+ai-detect is a free, open source AI text detector that runs entirely on your own hardware. It scores writing sentence by sentence using [desklib/ai-text-detector-v1.01](https://huggingface.co/desklib/ai-text-detector-v1.01), a DeBERTa-v3-large model (434 million parameters) that was first on the RAID detection benchmark when it was submitted in February 2025 and stood 42nd of 61 on 24 Nov 2026 ([leaderboard](https://raid-bench.xyz/leaderboard)). Five other open models can be selected, including two ranked 2nd and 4th on that date: see [`docs/MODEL-EVAL-2026-11.md`](docs/MODEL-EVAL-2026-11.md). There is no API key, no per-word pricing and no upload: after a one-off 1.7 GB model download it works offline, on CPU or GPU. It ships as a command-line tool, a Python package and an MCP server, under the MIT licence.
 
 That combination is the point. Every mainstream AI checker - GPTZero, Originality.ai, Copyleaks, Winston - is a hosted service you paste your client's unpublished draft into. This one never sends a byte anywhere.
 
@@ -24,10 +24,10 @@ It isn't Pangram Labs, and no detector is a lie detector - a confident writer wh
 |---|---|
 | Does it cost anything? | No. MIT licensed, no API key, no usage limits. |
 | Does my text leave the machine? | No. Inference is local; the only network call is the first model download. |
-| Which model? | DeBERTa-v3-large (304M), RAID benchmark #1. A 126 MB RoBERTa ONNX alternative ships too. |
+| Which model? | DeBERTa-v3-large (434M parameters) by default, RAID rank 42 of 61 on 24 Nov 2026. Five more models ship, from 126 MB. |
 | Can I self-host it as an API? | It runs as an MCP server (`ai-detect-mcp`) and as an importable Python package. |
 | Does it need a GPU? | No. CPU by default; CUDA used automatically when present. |
-| How accurate is it? | On paired tests, formal phrasing scored 92.6% AI against 0.03% for the same fact written conversationally. Treat it as a signal across a batch, not a verdict on one sentence. |
+| How accurate is it? | Strong on whole documents, weak on single sentences: measured figures are in [`docs/MODEL-EVAL-2026-11.md`](docs/MODEL-EVAL-2026-11.md). Treat it as a signal across a batch, not a verdict on one sentence. |
 
 ## What it tells you
 
@@ -36,6 +36,8 @@ Better than a single percentage, it tells you *why* a line reads as machine-writ
 - **Missing contractions are the #1 signal.** "The software has been significantly improved" scores 92.6% AI; "software's got a lot better" scores 0.03%.
 - **"Provides / offers / delivers" are detector magnets.** So are the **"Furthermore" / "Additionally" / "In conclusion"** openers.
 - **"For [group] who [condition]"** framing, vague abstractions where a specific name would do, and, oddly, the word **"noticeably"**.
+
+> **Note, 24 Nov 2026.** The percentages in this section were measured in February 2026. Re-run on 24 Nov 2026, the default model gave 91.9% and 79.7% for the first pair, not 92.6% and 0.03%. See `docs/MODEL-EVAL-2026-11.md` before quoting them.
 
 Each flag comes with a plain-English rewrite suggestion, so the tool doubles as an editing pass. The full pattern write-up is in [`docs/detection-patterns.md`](docs/detection-patterns.md).
 
@@ -56,7 +58,7 @@ Each flag comes with a plain-English rewrite suggestion, so the tool doubles as 
 
 | | `desklib` (default) | `light` (`--model light`) |
 |---|---|---|
-| Model | DeBERTa-v3-large, 304M | RoBERTa-base int8, ONNX |
+| Model | DeBERTa-v3-large, 434M | RoBERTa-base int8, ONNX |
 | Download | **~1.7 GB**, once | **~126 MB**, once |
 | Runtime | PyTorch (CPU or CUDA) | ONNX Runtime (CPU, or GPU via DirectML/CUDA) |
 | Best for | the calibrated reference score | a fast, small triage pass |
@@ -167,19 +169,13 @@ Tools it exposes:
 | `get_model_status` | Report instantly whether a model is ready, still downloading, or absent |
 | `list_models` | List the available models, their sizes, and download state |
 
+Version 2.0.0 adds `detect_ai_url`, `scan_batch`, `prefetch` and `open_dashboard`, a local web UI (`ai-detect serve`), six selectable models and ensembles. The full inventory is in [`docs/FEATURES.md`](docs/FEATURES.md).
+
 ## The model & the download
 
 First run of the default model pulls **~1.7 GB** from the Hugging Face Hub and caches it under `~/.cache/huggingface`. After that it's instant and offline. Nothing about your text is sent anywhere — the model runs on your hardware.
 
-> **First run through MCP: the first detect call waits for the download.** The server starts fetching the weights in the background the moment it launches, so the connection itself is never held up — but a detect call issued before that finishes has to wait for it, which can be a few minutes. `get_model_status` returns instantly and distinguishes `ready` / `downloading` / `absent`, so the client can check *before* detecting and tell you what's actually happening rather than looking like it has hung. Claude will typically do this for you; you can also just warm the cache once from the CLI:
->
-> ```bash
-> ai-detect --text "warming the cache"
-> ```
->
-> Every call after that, CLI or MCP, is instant. `--model light` (~126 MB) downloads fast enough that it rarely trips this. (The MCP server also spends a few seconds importing its ML libraries at startup — that's expected, and it happens in the background.)
->
-> If a download stalls outright, a detect call gives up after 15 minutes with an explanatory error instead of hanging forever. Set `AI_DETECT_READY_TIMEOUT` (seconds, `0` = wait indefinitely) to change that.
+> **First run through MCP (changed in 2.0.0).** A detect call no longer waits for a download. If the model is not on disk the call returns at once with `status: "downloading"`, a percentage and a message; call it again when the download has finished. `get_model_status` shows progress, `prefetch` starts a download ahead of time, and `ai-detect download <model>` does the same from the terminal with a progress bar.
 
 Why local and not a hosted API? desklib registers a custom model architecture, so it isn't served by Hugging Face's hosted inference — and even where a hosted detector exists, using it would mean shipping your unpublished copy to someone else's server. For a tool you point at commissioned work, local is the right default. If 1.7 GB is too much, `--model light` is a ~126 MB stand-in.
 

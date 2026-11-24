@@ -49,9 +49,13 @@ def main():
         line("mcp", "NOT INSTALLED  (pip install mcp)")
 
     print("-" * 40)
-    print("Default model : desklib/ai-text-detector-v1.01 (~1.7 GB, first run downloads it)")
-    print("Light model   : onnx-community/tmr-ai-text-detector-ONNX (~126 MB)")
-
+    try:
+        import playwright  # noqa: F401
+        line("playwright", "available (URL input)")
+    except ImportError:
+        line("playwright", "not installed (only needed for URL input)")
+    print("-" * 40)
+    print("Models: run `ai-detect models` for sizes, licences and download state.")
 
 if __name__ == "__main__":
     main()

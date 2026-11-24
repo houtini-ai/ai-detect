@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-labelledby="t d" font-family="'Schibsted Grotesk','Segoe UI',system-ui,sans-serif">
+  <title id="t">How ai-detect turns an input into four separate signals</title>
+  <desc id="d">Text, a file or a URL becomes one structured document. Four signals are computed from it and reported side by side: model scores, sentence patterns, structure and style tells, and perplexity. They are never blended into one number.</desc>
+  <style>
+    .bg{fill:#fafafa}.box{fill:#fff;stroke:#d4d4d8;stroke-width:1}.acc{fill:#eef7f3;stroke:#0f7a5a;stroke-width:1.2}
+    .h{font-size:15px;font-weight:700;fill:#18181b}.p{font-size:12.5px;fill:#52525b}.k{font:600 10.5px 'JetBrains Mono',ui-monospace,Consolas,monospace;letter-spacing:.08em;fill:#71717a}
+    .m{font:500 11.5px 'JetBrains Mono',ui-monospace,Consolas,monospace;fill:#0f7a5a}.ln{stroke:#a1a1aa;stroke-width:1.2;fill:none}.rule{stroke:#e4e4e7;stroke-width:1}
+  </style>
+  <defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="#a1a1aa"/></marker></defs>
+  <rect class="bg" width="960" height="560"/>
+  <text class="k" x="32" y="40">INPUT</text><text class="k" x="250" y="40">ONE DOCUMENT</text><text class="k" x="470" y="40">FOUR SIGNALS, KEPT APART</text><text class="k" x="790" y="40">REPORT</text>
+  <line class="rule" x1="32" y1="52" x2="928" y2="52"/>
+
+  <g><rect class="box" x="32" y="84" width="170" height="64" rx="6"/><text class="h" x="48" y="110">Text</text><text class="p" x="48" y="130">pasted, piped, Markdown</text></g>
+  <g><rect class="box" x="32" y="170" width="170" height="64" rx="6"/><text class="h" x="48" y="196">File</text><text class="p" x="48" y="216">.txt .md .html</text></g>
+  <g><rect class="box" x="32" y="256" width="170" height="84" rx="6"/><text class="h" x="48" y="282">URL</text><text class="p" x="48" y="302">one page, rendered in</text><text class="p" x="48" y="319">headless Chromium</text></g>
+  <path class="ln" marker-end="url(#a)" d="M202 116H226V190H248"/><path class="ln" marker-end="url(#a)" d="M202 202H248"/><path class="ln" marker-end="url(#a)" d="M202 298H226V214H248"/>
+
+  <g><rect class="acc" x="250" y="132" width="180" height="150" rx="6"/><text class="h" x="266" y="160">Blocks</text>
+    <text class="p" x="266" y="182">headings, paragraphs,</text><text class="p" x="266" y="199">list items, tables,</text><text class="p" x="266" y="216">captions</text>
+    <text class="m" x="266" y="244">sentences</text><text class="m" x="266" y="262">passages (~200 words)</text></g>
+  <g><rect class="box" x="250" y="300" width="180" height="62" rx="6"/><text class="h" x="266" y="326">Page shape</text><text class="p" x="266" y="346">geometry + screenshot (URL)</text></g>
+
+  <path class="ln" marker-end="url(#a)" d="M430 176H448V108H468"/><path class="ln" marker-end="url(#a)" d="M430 200H448V226H468"/><path class="ln" marker-end="url(#a)" d="M430 236H448V344H468"/><path class="ln" marker-end="url(#a)" d="M430 258H440V462H468"/>
+  <path class="ln" marker-end="url(#a)" d="M430 336H448V362H468"/>
+
+  <g><rect class="box" x="470" y="72" width="290" height="96" rx="6"/><text class="k" x="486" y="94">1</text><text class="h" x="504" y="96">Model scores</text>
+    <text class="p" x="486" y="118">One detector, or up to five as an ensemble.</text><text class="p" x="486" y="135">Per sentence and per passage; each model</text><text class="p" x="486" y="152">read at its own calibrated threshold.</text></g>
+  <g><rect class="box" x="470" y="186" width="290" height="82" rx="6"/><text class="k" x="486" y="208">2</text><text class="h" x="504" y="210">Sentence patterns</text>
+    <text class="p" x="486" y="232">Missing contractions, formal verbs, stock</text><text class="p" x="486" y="249">transitions. Each with a rewrite suggestion.</text></g>
+  <g><rect class="box" x="470" y="286" width="290" height="116" rx="6"/><text class="k" x="486" y="308">3</text><text class="h" x="504" y="310">Structure and style tells</text>
+    <text class="p" x="486" y="332">Rule of three, tidy closers, question</text><text class="p" x="486" y="349">headings, bold lead-in bullets, even rhythm.</text><text class="p" x="486" y="366">On a URL: card grids, gradient hero,</text><text class="p" x="486" y="383">outlined on the screenshot.</text></g>
+  <g><rect class="box" x="470" y="420" width="290" height="84" rx="6" stroke-dasharray="5 4"/><text class="k" x="486" y="442">4</text><text class="h" x="504" y="444">Perplexity and burstiness</text>
+    <text class="p" x="486" y="466">Optional. How predictable each sentence is</text><text class="p" x="486" y="483">to GPT-2. A readout, no verdict.</text></g>
+
+  <path class="ln" marker-end="url(#a)" d="M760 120H776V250H788"/><path class="ln" marker-end="url(#a)" d="M760 227H776V274H788"/><path class="ln" marker-end="url(#a)" d="M760 344H776V298H788"/><path class="ln" marker-end="url(#a)" d="M760 462H776V322H788"/>
+  <g><rect class="acc" x="790" y="196" width="138" height="186" rx="6"/><text class="h" x="804" y="224">One report</text>
+    <text class="p" x="804" y="248">verdict + confidence</text><text class="p" x="804" y="266">highlighted text</text><text class="p" x="804" y="284">tells panel</text><text class="p" x="804" y="302">per-model columns</text>
+    <text class="m" x="804" y="332">CLI · MCP · web UI</text><text class="m" x="804" y="350">HTML · CSV · JSON</text></g>
+  <text class="p" x="32" y="536">Everything runs on your machine. The model score never includes signals 2 to 4: they explain and cross-check it.</text>
+</svg>
