@@ -125,7 +125,9 @@ def assess(report, n_models=1):
     score near the middle, and when the models disagree.
     """
     words = report.get("words", 0)
-    pct = report["document_ai_pct"]
+    # The calibrated document score: each model read at its own operating point.
+    pct = report.get("operating_point", {}).get("calibrated_document_pct",
+                                                report["document_ai_pct"])
     notes = []
     if words == 0:
         return {"label": "No prose to score", "ai_pct": 0.0, "confidence": "none",
@@ -150,7 +152,8 @@ def assess(report, n_models=1):
         if s["label"] == "Skipped":
             continue
         n = len(s["sentence"].split())
-        key = "ai" if s["ai_prob"] >= 0.65 else "human" if s["ai_prob"] <= 0.35 else "uncertain"
+        p = s.get("calibrated_prob", s["ai_prob"])
+        key = "ai" if p >= 0.65 else "human" if p <= 0.35 else "uncertain"
         by_words[key] += n
     total = sum(by_words.values()) or 1
     breakdown = {k: round(v * 100 / total) for k, v in by_words.items()}

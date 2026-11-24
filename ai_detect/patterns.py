@@ -67,7 +67,8 @@ FORMAL_VERBS = {
 _NOUN_OR_VERB = {"feature", "address", "offer"}
 _NOUN_CUE_BEFORE = (r"(?:a|an|the|this|that|these|those|its|their|our|your|his|her|my|new|key|"
                     r"main|many|several|some|few|more|most|other|all|both|no|of|with|and|or|"
-                    r"special|email|ip|web|two|three|four|five|six|\d+)")
+                    r"special|email|ip|web|two|three|four|five|six|\d+|"
+                    r"\w+(?:ive|ous|ful|ble|al|ic|ed|ing|ty))")
 _VERB_CUE_AFTER = (r"(?:a|an|the|this|that|these|those|its|their|our|your|his|her|up|over|"
                    r"more|several|many|multiple|numerous|some|all|both|you|users|\d+|"
                    r"\w+(?:ive|ent|ant|ous|ful|ble|ed|ing|al|ic))")

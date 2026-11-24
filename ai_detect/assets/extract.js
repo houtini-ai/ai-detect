@@ -4,7 +4,7 @@
 // Coordinates are CSS pixels from the top-left of the full page, so they map
 // straight onto a full-page screenshot.
 () => {
-  const NOISE = /cookie|consent|gdpr|newsletter|subscribe|share|social|related|comment|sidebar|breadcrumb|toc\b|table-of-contents|promo|advert|popup|modal|banner/i;
+  const NOISE = /author|byline|contributor|cookie|consent|gdpr|newsletter|subscribe|share|social|related|comment|sidebar|breadcrumb|toc\b|table-of-contents|promo|advert|popup|modal|banner/i;
   const SKIP_TAGS = new Set(['NAV', 'HEADER', 'FOOTER', 'ASIDE', 'FORM', 'SCRIPT', 'STYLE', 'NOSCRIPT',
     'TEMPLATE', 'IFRAME', 'SVG', 'BUTTON', 'SELECT', 'DIALOG', 'PRE', 'CODE']);
   const SKIP_ROLES = new Set(['navigation', 'banner', 'contentinfo', 'complementary', 'search', 'dialog', 'alertdialog']);
@@ -129,7 +129,7 @@
 
   // ---- geometry snapshot for the visual tells (whole page, not just the article)
   const doc = document.documentElement;
-  const page = { width: doc.scrollWidth, height: doc.scrollHeight, viewport: [window.innerWidth, window.innerHeight] };
+  const page = { width: doc.scrollWidth, height: Math.max(doc.scrollHeight, document.body ? document.body.scrollHeight : 0), viewport: [window.innerWidth, window.innerHeight] };
 
   const isButtonLike = (el) => {
     if (!visible(el)) return false;

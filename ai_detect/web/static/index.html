@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>ai-detect</title>
+<script>
+  // Theme before paint. Dark is the default; the choice is remembered locally.
+  (function () {
+    var t = localStorage.getItem('ai-detect-theme');
+    if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    document.documentElement.className = t;
+  })();
+</script>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="mark" href="#/"><span class="dot" aria-hidden="true"></span>ai-detect <span class="ver" id="version"></span></a>
+  <nav aria-label="Sections">
+    <a href="#/" data-nav="scan">Scan</a>
+    <a href="#/compare" data-nav="compare">Compare</a>
+    <a href="#/batch" data-nav="batch">Batch</a>
+    <a href="#/history" data-nav="history">History</a>
+    <a href="#/models" data-nav="models">Models</a>
+  </nav>
+  <span class="local" title="The server is bound to 127.0.0.1. Text is analysed on this machine.">local only</span>
+  <button class="ghost" id="theme" type="button" aria-label="Switch between light and dark">Light</button>
+</header>
+
+<main id="main" tabindex="-1"></main>
+
+<footer class="foot">
+  <span>A detector score is evidence, not proof. Read it across a batch, never as a verdict on one sentence.</span>
+  <span class="mono" id="foot-url"></span>
+</footer>
+
+<template id="t-scan">
+  <section class="page narrow">
+    <h1>Scan a draft</h1>
+    <p class="lede">Paste text, drop a file, or give one URL. It is scored on this machine, sentence by sentence and as a whole.</p>
+    <form id="scan-form" class="panel">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" data-src="text" aria-selected="true">Text</button>
+        <button type="button" role="tab" data-src="url">URL</button>
+        <button type="button" role="tab" data-src="file">File</button>
+      </div>
+      <div data-pane="text">
+        <label class="sr" for="text">Text to scan</label>
+        <textarea id="text" rows="11" placeholder="Paste text or Markdown here, or drop a .txt, .md or .html file on this box."></textarea>
+      </div>
+      <div data-pane="url" hidden>
+        <label for="url">Page address</label>
+        <input id="url" type="url" inputmode="url" placeholder="https://example.com/article" autocomplete="off">
+        <p class="hint" id="url-hint">The page is opened in a headless Chromium on this machine. Only that one address is fetched.</p>
+      </div>
+      <div data-pane="file" hidden>
+        <label class="drop" id="drop" for="file"><strong>Choose a file</strong> or drop one here<span>.txt, .md or .html</span></label>
+        <input id="file" type="file" accept=".txt,.md,.markdown,.html,.htm,text/plain,text/markdown,text/html" class="sr">
+        <p class="hint" id="file-name"></p>
+      </div>
+      <fieldset class="models">
+        <legend>Models <span class="hint">pick one, or up to five to run as an ensemble</span></legend>
+        <div id="model-picker" class="ledger"></div>
+      </fieldset>
+      <div class="row">
+        <label class="check"><input type="checkbox" id="opt-ppl"> Perplexity and burstiness <span class="hint">GPT-2, 548 MB on first use</span></label>
+        <label class="check"><input type="checkbox" id="opt-lowmem"> Load models one at a time <span class="hint">slower, less memory</span></label>
+        <button class="primary" type="submit">Run scan</button>
+      </div>
+      <div id="scan-progress" class="progress" role="status" aria-live="polite" hidden></div>
+    </form>
+  </section>
+</template>
+
+<template id="t-compare">
+  <section class="page">
+    <h1>Compare two versions</h1>
+    <p class="lede">A draft and its edit, or two suppliers' copy. Both are scored with the same models.</p>
+    <form id="compare-form" class="panel">
+      <div class="two">
+        <div><label for="cmp-a">Before</label><textarea id="cmp-a" rows="10" placeholder="Text, or one URL"></textarea></div>
+        <div><label for="cmp-b">After</label><textarea id="cmp-b" rows="10" placeholder="Text, or one URL"></textarea></div>
+      </div>
+      <div class="row"><span class="hint" id="cmp-models"></span><button class="primary" type="submit">Compare</button></div>
+      <div id="compare-progress" class="progress" role="status" aria-live="polite" hidden></div>
+    </form>
+    <div id="compare-result"></div>
+  </section>
+</template>
+
+<template id="t-batch">
+  <section class="page">
+    <h1>Batch scan</h1>
+    <p class="lede">One URL or file path per line. They run one after another and land in a summary table.</p>
+    <form id="batch-form" class="panel">
+      <label for="batch-items">URLs or file paths</label>
+      <textarea id="batch-items" rows="7" placeholder="https://example.com/post-one&#10;C:\drafts\article.md"></textarea>
+      <label class="drop small" for="batch-files"><strong>Add files</strong> or drop several here</label>
+      <input id="batch-files" type="file" multiple class="sr" accept=".txt,.md,.markdown">
+      <p class="hint" id="batch-file-names"></p>
+      <div class="row"><span class="hint" id="batch-models"></span><button class="primary" type="submit">Run batch</button></div>
+      <div id="batch-progress" class="progress" role="status" aria-live="polite" hidden></div>
+    </form>
+    <div id="batch-result"></div>
+  </section>
+</template>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
