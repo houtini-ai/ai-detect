@@ -1,0 +1,53 @@
+{
+  "name": "@houtini/ai-detect",
+  "version": "2.0.0",
+  "description": "Local AI-text detector: CLI, MCP server and web UI. This npm package is a launcher; the tool itself is Python and is run through uv.",
+  "mcpName": "io.github.houtini-ai/ai-detect",
+  "bin": {
+    "ai-detect": "bin/ai-detect.js",
+    "ai-detect-mcp": "bin/ai-detect-mcp.js"
+  },
+  "files": [
+    "bin/",
+    "ai_detect/**/*.py",
+    "ai_detect/calibration.json",
+    "ai_detect/assets/",
+    "ai_detect/web/static/",
+    "ai_detect/_vendor/LICENSE-conpara",
+    "pyproject.toml",
+    "LICENSE",
+    "README.md",
+    "THIRD-PARTY-MODELS.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test": "python -m pytest -q --ignore=tests/ui",
+    "release:check": "python scripts/release_check.py",
+    "prepublishOnly": "python scripts/release_check.py"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "ai-detection",
+    "ai-text-detector",
+    "claude",
+    "local"
+  ],
+  "author": "Richard Baxter <richard@houtini.com> (https://houtini.com)",
+  "license": "MIT",
+  "homepage": "https://github.com/houtini-ai/ai-detect",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/houtini-ai/ai-detect.git"
+  },
+  "bugs": {
+    "url": "https://github.com/houtini-ai/ai-detect/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

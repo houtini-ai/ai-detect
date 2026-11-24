@@ -1,0 +1,77 @@
+{
+  "manifest_version": "0.4",
+  "name": "ai-detect",
+  "display_name": "ai-detect",
+  "version": "2.0.0",
+  "description": "Local AI-text detection: per-sentence and document scores from open detectors, on your own machine.",
+  "long_description": "Scores text, files and web pages for AI authorship with open detector models that run on this computer. Nothing is uploaded. Models download from Hugging Face on first use (126 MB to 1.7 GB each). Includes a local dashboard.",
+  "author": {
+    "name": "Richard Baxter",
+    "email": "richard@houtini.com",
+    "url": "https://houtini.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/houtini-ai/ai-detect"
+  },
+  "homepage": "https://github.com/houtini-ai/ai-detect",
+  "license": "MIT",
+  "icon": "assets/icon.png",
+  "server": {
+    "type": "uv",
+    "entry_point": "mcpb_entry.py"
+  },
+  "tools": [
+    {
+      "name": "detect_ai_text",
+      "description": "Score text for AI authorship, per sentence and as a document"
+    },
+    {
+      "name": "detect_ai_file",
+      "description": "Score a local text, Markdown or HTML file"
+    },
+    {
+      "name": "detect_ai_url",
+      "description": "Fetch one web page and score its article text"
+    },
+    {
+      "name": "compare_texts",
+      "description": "Score two texts and report the change"
+    },
+    {
+      "name": "scan_batch",
+      "description": "Scan many files or URLs and return a summary table"
+    },
+    {
+      "name": "get_model_status",
+      "description": "Model download state and progress"
+    },
+    {
+      "name": "list_models",
+      "description": "Available models with licence, size and RAID rank"
+    },
+    {
+      "name": "prefetch",
+      "description": "Download a model ahead of first use"
+    },
+    {
+      "name": "open_dashboard",
+      "description": "Open the local web UI"
+    }
+  ],
+  "compatibility": {
+    "platforms": [
+      "win32",
+      "darwin",
+      "linux"
+    ],
+    "runtimes": {
+      "python": ">=3.11,<3.15"
+    }
+  },
+  "keywords": [
+    "ai-detection",
+    "writing",
+    "local"
+  ]
+}

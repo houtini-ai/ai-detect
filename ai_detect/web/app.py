@@ -16,7 +16,7 @@ import uuid
 from importlib import resources
 
 from starlette.applications import Starlette
-from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
+from starlette.responses import JSONResponse, PlainTextResponse, Response
 from starlette.routing import Route
 
 from .. import downloads, history, report as exports
