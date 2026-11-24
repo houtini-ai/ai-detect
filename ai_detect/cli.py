@@ -85,7 +85,7 @@ def print_results(data, label=""):
 
         if label == "AI":
             for d in r.get("diagnostics", []):
-                print(f"              ^ {d['pattern']}: '{d['match']}' — {d['suggestion']}")
+                print(f"              ^ {d['pattern']}: '{d['match']}': {d['suggestion']}")
 
     print()
     tells = data.get("tells")

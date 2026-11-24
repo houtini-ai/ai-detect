@@ -100,28 +100,28 @@ $ ai-detect --model light --compare examples/ai-sample.txt examples/human-sample
   Note: Only 76 words. The model cards call results under about 150 words unreliable.
 
   >> AI  (0.98) The ProGrind X1 represents a significant advancement in home coffee technology.
-              ^ formal_verb: 'represents' — try 'is' or rephrase
+              ^ formal_verb: 'represents': try 'is' or rephrase
   >> AI  (0.99) It provides exceptional grind consistency and delivers a seamless brewing experience for enthusiasts who de...
-              ^ formal_verb: 'provides' — try 'gives you' or 'has'
-              ^ formal_verb: 'delivers' — try 'gives you' or just describe what it does
-              ^ ai_slop: 'seamless' — replace with plain English
+              ^ formal_verb: 'provides': try 'gives you' or 'has'
+              ^ formal_verb: 'delivers': try 'gives you' or just describe what it does
+              ^ ai_slop: 'seamless': replace with plain English
   >> AI  (0.99) Additionally, the burr mechanism has been comprehensively engineered to ensure optimal extraction across mu...
-              ^ formal_verb: 'ensure' — try 'makes sure' or rephrase
-              ^ formal_transition: 'Additionally' — cut it, or use 'And' / 'Plus'
-              ^ vague_abstraction: 'multiple' — say how many, or name them
-              ^ flaggy_adverb: 'comprehensively' — try 'fully' or cut it
+              ^ formal_verb: 'ensure': try 'makes sure' or rephrase
+              ^ formal_transition: 'Additionally': cut it, or use 'And' / 'Plus'
+              ^ vague_abstraction: 'multiple': say how many, or name them
+              ^ flaggy_adverb: 'comprehensively': try 'fully' or cut it
   >> AI  (0.99) Furthermore, the intuitive interface enables users to effortlessly navigate a wide range of settings.
-              ^ formal_verb: 'enables' — try 'lets you' or 'means you can'
-              ^ formal_transition: 'Furthermore' — cut it, or use 'And' / 'On top of that'
-              ^ vague_abstraction: 'a wide range of' — name the range or drop it
+              ^ formal_verb: 'enables': try 'lets you' or 'means you can'
+              ^ formal_transition: 'Furthermore': cut it, or use 'And' / 'On top of that'
+              ^ vague_abstraction: 'a wide range of': name the range or drop it
   >> AI  (0.99) It is important to note that this device incorporates numerous innovative features that fundamentally enhan...
-              ^ missing_contraction: 'it is' — use 'it's'
-              ^ formal_verb: 'incorporates' — try 'includes' or 'has'
-              ^ formal_verb: 'enhance' — try 'improves' or 'makes better'
-              ^ formal_transition: 'It is important to note' — cut it — just state the fact
-              ^ ai_slop: 'innovative' — replace with plain English
-              ^ vague_abstraction: 'numerous' — say how many, or name them
-              ^ flaggy_adverb: 'fundamentally' — often filler — cut it or say how
+              ^ missing_contraction: 'it is': use 'it's'
+              ^ formal_verb: 'incorporates': try 'includes' or 'has'
+              ^ formal_verb: 'enhance': try 'improves' or 'makes better'
+              ^ formal_transition: 'It is important to note': cut it — just state the fact
+              ^ ai_slop: 'innovative': replace with plain English
+              ^ vague_abstraction: 'numerous': say how many, or name them
+              ^ flaggy_adverb: 'fundamentally': often filler — cut it or say how
 
   Structure and style (separate from the model score):
     [medium] Stock vocabulary: …ptional grind consistency and delivers a seamless brewing experience
@@ -168,9 +168,9 @@ $ ai-detect --model light,gpttrace-150m --text "Furthermore, the platform provid
     gpttrace-150m  sentences  70.6%  document  16.1%  flagged 1
 
   >> AI  (0.53) [2/2] Furthermore, the platform provides a seamless experience for modern teams.
-              ^ formal_verb: 'provides' — try 'gives you' or 'has'
-              ^ formal_transition: 'Furthermore' — cut it, or use 'And' / 'On top of that'
-              ^ ai_slop: 'seamless' — replace with plain English
+              ^ formal_verb: 'provides': try 'gives you' or 'has'
+              ^ formal_transition: 'Furthermore': cut it, or use 'And' / 'On top of that'
+              ^ ai_slop: 'seamless': replace with plain English
      HUM (0.74) [0/2] I don't love the price, though, and my brother agrees.
 
   Structure and style (separate from the model score):
@@ -195,7 +195,7 @@ $ ai-detect --model light --file tests/fixtures/tells-sample.md
   >> AI  (0.98) FlowDesk is a comprehensive platform that brings your tasks together.
   >> AI  (0.97) It's not just a tool, but a complete ecosystem for modern teams.
   >> AI  (0.98) In short, FlowDesk empowers your team to do more with less.
-              ^ ai_slop: 'empowers' — replace with plain English
+              ^ ai_slop: 'empowers': replace with plain English
    --- (skip) Key Benefits Of FlowDesk
   >> AI  (0.93) Speed: pages load quickly on every device you own
   >> AI  (0.92) Security: your data stays encrypted at rest and in transit
@@ -277,7 +277,7 @@ Server name `ai-detect`. Transport: stdio. The table is read from the running se
 | `detect_ai_text` | `text`, `model` (`"desklib"`), `device` (`"auto"`), `include_all_sentences` (`false`), `perplexity` (`false`) | yes | yes |
 | `detect_ai_url` | `url`, `model` (`"desklib"`), `device` (`"auto"`), `include_all_sentences` (`false`), `perplexity` (`false`), `timeout` (`30.0`) | yes | yes |
 | `get_model_status` | `model` (`"desklib"`) | yes | no |
-| `list_models` | none | yes | yes |
+| `list_models` | none | yes | no |
 | `open_dashboard` | `open_browser` (`false`) | no | no |
 | `prefetch` | `model` (`"desklib"`) | no | yes (that is its job) |
 | `scan_batch` | `items`, `model` (`"desklib"`), `device` (`"auto"`) | yes | yes |

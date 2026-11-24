@@ -92,6 +92,13 @@ INSTRUCTIONS = (
 )
 
 mcp = _Server("ai-detect", instructions=INSTRUCTIONS)
+for _holder in (mcp, getattr(mcp, "_mcp_server", None), getattr(mcp, "_lowlevel_server", None)):
+    # Report this package's version in serverInfo (SDK 1.x and 2.x keep it in different places).
+    if _holder is not None and hasattr(_holder, "version"):
+        try:
+            _holder.version = __version__
+        except Exception:
+            pass
 
 ENGINE_START_TIMEOUT = float(os.environ.get("AI_DETECT_READY_TIMEOUT", "60"))
 _engine = {"url": "", "process": None, "error": None, "owned": False}
