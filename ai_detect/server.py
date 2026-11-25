@@ -415,7 +415,7 @@ async def detect_ai_text(
     Args:
         text: The text to analyse (plain text or Markdown).
         model: A model id, or up to 5 comma-separated ids to run as an ensemble
-            (see list_models). Default 'desklib'.
+            (see list_models). Default 'gpttrace-150m'.
         device: 'auto' (GPU if available, else CPU), 'cpu', or 'cuda'.
         include_all_sentences: Also return every scored sentence, not just flagged ones.
         perplexity: Add a GPT-2 perplexity and burstiness readout (548 MB on first use).
@@ -448,7 +448,7 @@ async def detect_ai_file(
 
     Args:
         path: Absolute path to a UTF-8 .txt, .md or .html file.
-        model: A model id or comma-separated ids (ensemble). Default 'desklib'.
+        model: A model id or comma-separated ids (ensemble). Default 'gpttrace-150m'.
         device: 'auto', 'cpu', or 'cuda'.
         include_all_sentences: Also return every scored sentence.
         perplexity: Add the GPT-2 perplexity readout.
@@ -492,7 +492,7 @@ async def detect_ai_url(
 
     Args:
         url: An http(s) address.
-        model: A model id or comma-separated ids (ensemble). Default 'desklib'.
+        model: A model id or comma-separated ids (ensemble). Default 'gpttrace-150m'.
         device: 'auto', 'cpu', or 'cuda'.
         include_all_sentences: Also return every scored sentence.
         perplexity: Add the GPT-2 perplexity readout.

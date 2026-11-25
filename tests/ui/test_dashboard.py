@@ -142,7 +142,7 @@ def test_more_than_five_models_is_capped(page):
             boxes.nth(i).click()  # the sixth click is undone by the cap
     assert page.locator("#model-picker input:checked").count() == 5
     for i in range(n):
-        if boxes.nth(i).is_checked() and boxes.nth(i).get_attribute("value") != "desklib":
+        if boxes.nth(i).is_checked() and boxes.nth(i).get_attribute("value") != "gpttrace-150m":
             boxes.nth(i).uncheck()
     assert unexpected(page) == []
 
@@ -225,6 +225,17 @@ def test_compare_shows_delta_table(page):
     page.click("#compare-form .primary")
     page.wait_for_selector("#compare-result table", timeout=60000)
     assert "Document score" in page.inner_text("#compare-result table")
+    # The table's Verdict and Document score rows repeat the two cards exactly.
+    labels = [t.strip() for t in page.locator("#compare-result .verdict .label").all_inner_texts()]
+    scores = [t.split("%")[0].strip() for t in
+              page.locator("#compare-result .verdict .stat .v").all_inner_texts()]
+    rows = {r.locator("td").nth(0).inner_text(): [r.locator("td").nth(1).inner_text().strip(),
+                                                  r.locator("td").nth(2).inner_text().strip()]
+            for r in page.locator("#compare-result table tbody tr").all()}
+    assert rows["Verdict"] == labels and labels[0] != labels[1]
+    assert [float(v.rstrip("%")) for v in rows["Document score"]] == [float(v) for v in scores]
+    assert "LIKELY" not in page.inner_text("#compare-result table")
+    assert {"Document score, raw", "Mean sentence score, raw", "Sentences over 50%, raw"} <= set(rows)
     assert page.locator("#compare-result a:has-text('Open the full result')").count() == 2
     assert unexpected(page) == []
 
@@ -251,6 +262,24 @@ def test_history_lists_and_opens_scan(scanned):
     assert scanned.locator("tbody tr.link").count() >= 1
     scanned.click("tbody tr.link")
     scanned.wait_for_selector(".verdict .label", timeout=30000)
+    assert unexpected(scanned) == []
+
+
+def test_history_document_column_is_the_result_pages_figure(scanned):
+    """The History list shows the calibrated document score and verdict, the
+    same ones the result page shows; the raw sentence mean is labelled raw."""
+    shown = scanned.inner_text(".verdict .stat .v").split("%")[0].strip()
+    label = scanned.inner_text(".verdict .label").strip()
+    scan_id = scanned.url.rsplit("/", 1)[-1]
+    report = scanned.evaluate("(id) => fetch('/api/scans/' + id).then((r) => r.json())", scan_id)
+    assert report["document_ai_pct"] != report["assessment"]["ai_pct"]  # raw differs here
+    scanned.goto(scanned.url.split("#")[0] + "#/history")
+    scanned.wait_for_selector("#h-on")
+    cells = scanned.locator(f"tbody tr.link[data-open='{scan_id}'] td")
+    assert cells.nth(1).inner_text().strip() == label
+    assert float(cells.nth(2).inner_text().strip().rstrip("%")) == float(shown)
+    assert float(shown) == report["assessment"]["ai_pct"]
+    assert "raw" in cells.nth(3).inner_text()
     assert unexpected(scanned) == []
 
 
@@ -308,7 +337,7 @@ def test_scan_with_missing_model_downloads_first(page, ctl):
     page.goto(page.url.split("#")[0] + "#/")
     page.wait_for_selector("#scan-form")
     page.check("#model-picker input[value='gpttrace-1b']")
-    page.uncheck("#model-picker input[value='desklib']")
+    page.uncheck("#model-picker input[value='gpttrace-150m']")
     page.fill("#text", TEXT)
     page.click("#scan-form .primary")
     page.wait_for_function(
@@ -317,7 +346,7 @@ def test_scan_with_missing_model_downloads_first(page, ctl):
     page.wait_for_selector(".verdict .label", timeout=60000)
     page.goto(page.url.split("#")[0] + "#/")
     page.wait_for_selector("#scan-form")
-    page.check("#model-picker input[value='desklib']")
+    page.check("#model-picker input[value='gpttrace-150m']")
     page.uncheck("#model-picker input[value='gpttrace-1b']")
     assert unexpected(page) == []
 

@@ -40,7 +40,7 @@ def main():
         import onnxruntime as ort
         line("onnxruntime", f"{ort.__version__}  providers={ort.get_available_providers()}")
     except ImportError:
-        line("onnxruntime", "not installed (only needed for --model light)")
+        line("onnxruntime", "NOT INSTALLED  (pip install onnxruntime; the default model needs it)")
 
     try:
         import mcp  # noqa: F401

@@ -28,11 +28,12 @@ module.exports = function launch(command) {
         ? '  powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"'
         : '  curl -LsSf https://astral.sh/uv/install.sh | sh',
       'More ways to install: https://docs.astral.sh/uv/getting-started/installation/',
-      'Or skip npm: git clone https://github.com/houtini-ai/ai-detect && pip install "./ai-detect[light]"',
+      'Or skip npm: git clone https://github.com/houtini-ai/ai-detect && pip install ./ai-detect',
     ]);
   }
-  // Extras: "light" adds ONNX Runtime (the small models). Add "web" for URL input.
-  const extras = (process.env.AI_DETECT_EXTRAS || 'light').replace(/[^a-z,-]/g, '');
+  // No extra is needed for the default model (ONNX Runtime is a core dependency).
+  // AI_DETECT_EXTRAS adds some: "web" for URL input, "conpara" for that model.
+  const extras = (process.env.AI_DETECT_EXTRAS || '').replace(/[^a-z,-]/g, '');
   const source = extras ? `${ROOT}[${extras}]` : ROOT;
   // No shell: the arguments are passed to uv as an array, never as a command line.
   const args = ['tool', 'run', '--quiet', '--from', source, command, ...process.argv.slice(2)];

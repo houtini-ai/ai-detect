@@ -22,6 +22,12 @@ classifiers = [
 ]
 dependencies = [
     "torch>=2.6",
+    # ONNX Runtime runs the default model (gpttrace-150m) and the other two
+    # ONNX models (light, gpttrace-1b). This is the CPU build. Do not install
+    # onnxruntime-directml or onnxruntime-gpu beside it: all three ship the
+    # same `onnxruntime` package folder and overwrite each other (see the
+    # gpu-directml note below).
+    "onnxruntime>=1.20",
     "transformers>=4.48",
     "tokenizers>=0.20",
     "huggingface-hub>=0.26",
@@ -37,17 +43,26 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# ONNX Runtime: needed by the light, gpttrace-150m and gpttrace-1b models.
+# ONNX Runtime is a core dependency since the default model needs it. These two
+# names are kept as aliases that add nothing, so `pip install ".[light]"` from
+# older instructions still works.
 light = ["onnxruntime>=1.20"]
 onnx = ["onnxruntime>=1.20"]
-# GPU execution provider for the ONNX models on Windows.
-gpu-directml = ["onnxruntime-directml>=1.20"]
+# Kept as a name only; it installs nothing. Up to 1.0.0 it installed
+# onnxruntime-directml. With the CPU build now a core dependency that would put
+# two distributions of the `onnxruntime` package in one environment, and the
+# CPU one wins (checked 25 Nov 2026: providers were Azure and CPU only). To run
+# the ONNX models on a GPU, replace the build after installing ai-detect:
+#     pip uninstall -y onnxruntime
+#     pip install --force-reinstall onnxruntime-directml   (Windows, DirectML)
+#     pip install --force-reinstall onnxruntime-gpu        (NVIDIA CUDA)
+gpu-directml = []
 # The DeBERTa-ConPara model needs a SentencePiece tokenizer.
 conpara = ["sentencepiece>=0.2", "protobuf>=5"]
 # URL input: fetch and render a page with headless Chromium.
 # After installing, run once:  playwright install chromium
 web = ["playwright>=1.48"]
-all = ["onnxruntime>=1.20", "sentencepiece>=0.2", "protobuf>=5", "playwright>=1.48"]
+all = ["sentencepiece>=0.2", "protobuf>=5", "playwright>=1.48"]
 dev = ["pytest>=8"]
 
 [project.urls]

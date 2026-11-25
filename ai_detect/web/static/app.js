@@ -25,6 +25,8 @@ const heat = (p) => (p == null ? 'skip' : p < 0.2 ? 'h0' : p < 0.4 ? 'h1' : p < 
 const score = (s) => (s.label === 'Skipped' ? null : (s.calibrated_prob ?? s.ai_prob));
 const size = (mb) => (mb >= 1000 ? (mb / 1000).toFixed(2) + ' GB' : mb + ' MB');
 const raid = (m) => (m.raid ? `#${m.raid.rank} of ${m.raid.of}` : 'unranked');
+// Time left, in the same words as the server's message (downloads.eta_text).
+const etaText = (s) => (!s || s <= 0 ? '' : s < 45 ? ', less than a minute left' : ', about ' + Math.max(1, Math.round(s / 60)) + ' min left');
 
 // ---------------------------------------------------------------- theme, nav
 $('#theme').addEventListener('click', () => {
@@ -61,7 +63,7 @@ function progressView(box, job) {
   if (p.side) lines.push(`<div class="hint">Version ${esc(p.side.toUpperCase())}</div>`);
   if (p.of && p.item != null && p.stage !== 'loading' && p.stage !== 'scoring') line(`Item ${Math.min(p.item + 1, p.of)} of ${p.of}`, p.item / p.of, '');
   if (p.stage === 'downloading') {
-    for (const m of p.models) line(m.model, m.percent / 100, m.status === 'ready' ? 'ready' : `${m.percent}% of ${size(m.approx_mb)}${m.eta_seconds ? ', ' + Math.ceil(m.eta_seconds / 60) + ' min' : ''}`);
+    for (const m of p.models) line(m.model, m.percent / 100, m.status === 'ready' ? 'ready' : `${m.percent}% of ${size(m.approx_mb)}${etaText(m.eta_seconds)}`);
     lines.unshift('<div class="hint">Downloading models from Hugging Face (one time). Nothing is uploaded.</div>');
   } else if (p.stage === 'loading' || p.stage === 'scoring') {
     for (let i = 0; i < p.of; i++) {
@@ -310,17 +312,24 @@ async function comparePage() {
       const [a, b] = await Promise.all([api('/api/scans/' + res.a), api('/api/scans/' + res.b)]);
       const c = res.compare;
       const row = (k, pair, unit = '') => `<tr><td>${k}</td><td class="num">${pair[0]}${unit}</td><td class="num">${pair[1]}${unit}</td><td class="num">${typeof pair[0] === 'number' ? (pair[1] - pair[0] > 0 ? '+' : '') + (Math.round((pair[1] - pair[0]) * 10) / 10) + unit : ''}</td></tr>`;
+      // One model: its own figures are on its raw scale and are labelled so.
+      // An ensemble's are already calibrated means, and its document figure is the score above.
+      const isRaw = (c.raw_scale || []).some(Boolean);
+      const rawRows = isRaw
+        ? row('Document score, raw', c.document_ai_pct, '%') + row('Mean sentence score, raw', c.sentence_ai_pct, '%') + row('Sentences over 50%, raw', c.flagged_sentences)
+        : row('Mean sentence score', c.sentence_ai_pct, '%');
       $('#compare-result').innerHTML = `<div class="cols" style="margin-top:28px"><div><h2>Before</h2>${verdictStrip(a, true)}<p><a href="#/scan/${esc(a.scan_id)}">Open the full result</a></p></div><div><h2>After</h2>${verdictStrip(b, true)}<p><a href="#/scan/${esc(b.scan_id)}">Open the full result</a></p></div></div>
         <table style="margin-top:20px"><thead><tr><th>Measure</th><th class="num">Before</th><th class="num">After</th><th class="num">Change</th></tr></thead><tbody>
-        ${row('Document score', c.document_ai_pct, '%')}${row('Mean sentence score', c.sentence_ai_pct, '%')}${row('Sentences over 50% (raw)', c.flagged_sentences)}${row('Sentence pattern hits', c.patterns)}${row('Structure and style tells', c.tells)}${row('Verdict', c.verdicts)}</tbody></table>`;
+        ${row('Verdict', c.verdicts)}${row('Document score', c.calibrated_document_pct, '%')}${row('Sentences flagged', c.operating_point_flagged)}${rawRows}${row('Sentence pattern hits', c.patterns)}${row('Structure and style tells', c.tells)}</tbody></table>
+        ${isRaw ? '<p class="hint">Rows marked raw are the model\'s own probabilities before calibration. The verdict and the document score are read at the calibrated operating point, as on the result page.</p>' : ''}`;
     });
   });
 }
 
 // ---------------------------------------------------------------- batch
 const scanRows = (rows) => rows.map((x) => x.error ? `<tr><td>${esc(x.label)}</td><td colspan="6" style="color:var(--ai)">${esc(x.error)}</td></tr>`
-  : `<tr class="link" data-open="${esc(x.scan_id)}"><td>${esc(x.title || x.label)}<div class="hint">${esc(x.kind === 'url' ? x.label : (x.created || '').replace('T', ' '))}</div></td><td>${esc(x.verdict)}</td><td class="num">${x.document_ai_pct ?? ''}%</td><td class="num">${x.sentence_ai_pct ?? ''}%</td><td class="num">${x.flagged ?? ''}</td><td class="num">${x.tells ?? ''}</td><td class="num">${x.words ?? ''}</td></tr>`).join('');
-const scanTable = (rows) => `<table><thead><tr><th>Source</th><th>Verdict</th><th class="num">Document</th><th class="num">Sentences</th><th class="num">Flagged</th><th class="num">Tells</th><th class="num">Words</th></tr></thead><tbody>${scanRows(rows)}</tbody></table>`;
+  : `<tr class="link" data-open="${esc(x.scan_id)}"><td>${esc(x.title || x.label)}<div class="hint">${esc(x.kind === 'url' ? x.label : (x.created || '').replace('T', ' '))}</div></td><td>${esc(x.verdict)}</td><td class="num">${x.calibrated_document_pct ?? x.document_ai_pct ?? ''}%</td><td class="num">${x.sentence_ai_pct ?? ''}%${x.raw_scale ? ' <span class="hint">raw</span>' : ''}</td><td class="num">${x.flagged ?? ''}</td><td class="num">${x.tells ?? ''}</td><td class="num">${x.words ?? ''}</td></tr>`).join('');
+const scanTable = (rows) => `<table><thead><tr><th>Source</th><th>Verdict</th><th class="num" title="Calibrated document score, as on the result page">Document</th><th class="num" title="Mean sentence score. Marked raw when one model ran: its own probabilities, before calibration">Sentences</th><th class="num">Flagged</th><th class="num">Tells</th><th class="num">Words</th></tr></thead><tbody>${scanRows(rows)}</tbody></table>`;
 main.addEventListener('click', (e) => { const row = e.target.closest('tr[data-open]'); if (row) location.hash = '#/scan/' + row.dataset.open; });
 async function batchPage() {
   main.replaceChildren($('#t-batch').content.cloneNode(true));
@@ -360,7 +369,7 @@ async function modelsPage() {
         <td class="num">${size(m.approx_mb)}</td><td>${esc(m.licence)}</td>
         <td>${m.raid ? `<span class="mono">#${m.raid.rank} of ${m.raid.of}</span><div class="hint">${m.raid.score} ${esc(m.raid.metric)}<br>read ${esc(m.raid.read)}, <a href="${esc(m.raid.source)}" target="_blank" rel="noreferrer">source</a></div>` : 'unranked'}</td>
         <td>${esc(m.runtime)}${m.extra ? `<div class="hint">extra: ${esc(m.extra)}</div>` : ''}</td>
-        <td><span class="state ${esc(m.status)}">${esc(m.status.replace('_', ' '))}</span>${m.status === 'downloading' ? `<div class="bar" style="margin-top:6px"><i style="width:${m.percent}%"></i></div><div class="hint mono">${m.percent}%${m.eta_seconds ? ', ' + Math.ceil(m.eta_seconds / 60) + ' min' : ''}</div>` : ''}${m.error ? `<div class="hint" style="color:var(--ai)">${esc(m.error)}</div>` : ''}</td>
+        <td><span class="state ${esc(m.status)}">${esc(m.status.replace('_', ' '))}</span>${m.status === 'downloading' ? `<div class="bar" style="margin-top:6px"><i style="width:${m.percent}%"></i></div><div class="hint mono">${m.percent}%${etaText(m.eta_seconds)}</div>` : ''}${m.error ? `<div class="hint" style="color:var(--ai)">${esc(m.error)}</div>` : ''}</td>
         <td>${m.status === 'ready' || m.status === 'downloading' ? '' : `<button class="ghost" data-dl="${esc(m.id)}">${m.status === 'failed' ? 'Retry' : 'Download'}</button>`}</td></tr>`).join('')}</tbody></table></section>`;
   };
   draw();

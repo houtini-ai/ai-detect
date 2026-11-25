@@ -1,5 +1,9 @@
 """Local scan history: reports saved as JSON on this machine, nowhere else.
 
+What is saved: every scan run through the dashboard or the MCP server (both go
+through ``web.app.run_scan``). The command line does not save: ``ai-detect
+draft.txt`` prints its result and writes nothing unless ``--export`` is given.
+
 Default folder: ``~/.ai-detect/history`` (override with AI_DETECT_HOME).
 Turn it off with ``AI_DETECT_HISTORY=off`` or ``set_enabled(False)``: scans are
 then kept in memory for the life of the process only, so result pages still
@@ -103,8 +107,14 @@ def _summary(report):
         "title": report.get("source", {}).get("title"),
         "models": report.get("models", []),
         "verdict": a.get("label"), "confidence": a.get("confidence"),
+        # The figure the result page shows: each model read at its own
+        # operating point. document_ai_pct and sentence_ai_pct are raw
+        # probabilities when one model ran (raw_scale), calibrated means for
+        # an ensemble.
+        "calibrated_document_pct": a.get("ai_pct", report.get("document_ai_pct")),
         "document_ai_pct": report.get("document_ai_pct"),
         "sentence_ai_pct": report.get("model_ai_pct"),
+        "raw_scale": len(report.get("models", [])) == 1,
         "words": report.get("words"),
         "flagged": report.get("operating_point", {}).get("flagged_sentences"),
         "tells": len(tells.get("structure", [])) + len(tells.get("visual", [])),

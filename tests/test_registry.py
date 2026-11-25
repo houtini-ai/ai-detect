@@ -76,7 +76,7 @@ def test_raid_result_source():
     assert "sub_name" in raid.source
 
 def test_real_registry():
-    assert DEFAULT_MODEL == "desklib"
+    assert DEFAULT_MODEL == "gpttrace-150m"
     assert "light" in MODELS
     for spec in MODELS.values():
         if spec.raid:

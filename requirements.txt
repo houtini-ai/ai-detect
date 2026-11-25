@@ -1,4 +1,5 @@
 # The dependency list lives in pyproject.toml. This file installs the package
-# with every optional extra, for people who expect a requirements.txt:
+# (PyTorch, Transformers and ONNX Runtime are core dependencies) with every
+# optional extra, for people who expect a requirements.txt:
 #     pip install -r requirements.txt
 .[all]

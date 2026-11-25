@@ -61,6 +61,17 @@ def _human(n):
         n /= 1024
 
 
+def eta_text(seconds):
+    """The time left, in words that agree with ``eta_seconds``: '' when it is
+    not known, 'less than a minute left' under 45 seconds, else the nearest
+    whole minute."""
+    if not seconds or seconds <= 0:
+        return ""
+    if seconds < 45:
+        return "less than a minute left"
+    return f"about {max(1, int(seconds / 60 + 0.5))} min left"
+
+
 def status(model):
     """The download state of one model, as a plain dict safe to return to a client.
 
@@ -93,7 +104,7 @@ def status(model):
     if st["state"] == "ready":
         out["message"] = f"{spec.id} is downloaded and ready."
     elif st["state"] == "downloading":
-        left = f", about {eta // 60 + 1} min left" if eta else ""
+        left = f", {eta_text(eta)}" if eta else ""
         out["message"] = f"Downloading {spec.id} ({size}): {percent:.0f}%{left}."
     elif st["state"] == "failed":
         out["message"] = (f"The {spec.id} download failed: {st['error']}. It can be retried "

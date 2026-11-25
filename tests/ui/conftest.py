@@ -28,14 +28,16 @@ class FakeBackend:
         self.name = name
 
     def margins(self, texts):
-        return [6.0 if any(w in t.lower() for w in AI_WORDS) else -6.0 for t in texts]
+        # 9.0 is over every model's sentence operating point by enough to land
+        # in the top heat band for the default model (gpttrace-150m: 0.87).
+        return [9.0 if any(w in t.lower() for w in AI_WORDS) else -9.0 for t in texts]
 
 
 @pytest.fixture(scope="session")
 def ctl():
     """Test control: which models count as downloaded, and whether the next
     simulated download fails."""
-    return {"ready": {"desklib", "light", "gpttrace-150m"}, "fail": False}
+    return {"ready": {"gpttrace-150m", "desklib", "light"}, "fail": False}
 
 
 @pytest.fixture(scope="session")

@@ -62,7 +62,6 @@ REGISTRY = Registry([
         licence="MIT",
         licence_source=_HF + "onnx-community/tmr-ai-text-detector-ONNX",
         runtime="onnx",
-        extra="light",
         raid=RaidResult(36, 61, 0.9579, "tmr_50k",
                         note="Rank is for the fp32 weights at Oxidane/tmr-ai-text-detector; "
                              "ai-detect runs the int8 ONNX export."),
@@ -83,7 +82,6 @@ REGISTRY = Registry([
         licence="CC-BY-SA-4.0",
         licence_source=_HF + "nakas/gpttrace-ettin150-text-v5e",
         runtime="onnx",
-        extra="light",
         normalizer="invisible+lookalike",
         raid=RaidResult(4, 61, 0.9980, "gpttrace-ettin150",
                         note="The card says the int8 file scores slightly below the "
@@ -111,7 +109,6 @@ REGISTRY = Registry([
         licence="CC-BY-SA-4.0",
         licence_source=_HF + "nakas/gpttrace-v8s-1b",
         runtime="onnx",
-        extra="light",
         normalizer="invisible+lookalike",
         raid=RaidResult(2, 61, 0.9993, "gpttrace-ettin1b",
                         note="Rank is for the full-precision weights (4.13 GB). ai-detect "
@@ -174,4 +171,4 @@ REGISTRY = Registry([
 ])
 
 MODELS = REGISTRY.models
-DEFAULT_MODEL = "desklib"
+DEFAULT_MODEL = "gpttrace-150m"

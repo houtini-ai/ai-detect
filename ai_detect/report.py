@@ -40,7 +40,8 @@ def to_csv(report) -> str:
 
 def batch_to_csv(rows) -> str:
     """One CSV row per batch dict."""
-    keys = ["label", "verdict", "confidence", "document_ai_pct", "sentence_ai_pct",
+    keys = ["label", "verdict", "confidence", "calibrated_document_pct", "document_ai_pct",
+            "sentence_ai_pct", "raw_scale",
             "words", "flagged", "tells", "scan_id", "error"]
     buf = io.StringIO()
     writer = csv.writer(buf, lineterminator="\n")

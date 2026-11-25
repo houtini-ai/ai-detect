@@ -272,7 +272,27 @@ def compare(report_a, report_b):
     def patterns(r):
         return sum(r.get("pattern_totals", {}).values())
 
+    def calibrated(r):
+        return r.get("assessment", {}).get(
+            "ai_pct", r.get("operating_point", {}).get("calibrated_document_pct",
+                                                       r["document_ai_pct"]))
+
+    def label(r):
+        # The same words as the result page. A report with no assessment (built
+        # by hand) falls back to the legacy reading of its document score.
+        return r.get("assessment", {}).get("label") or verdict(r["document_ai_pct"])
+
+    def flagged(r):
+        return r.get("operating_point", {}).get("flagged_sentences", r["ai_count"])
+
     return {
+        "verdicts": [label(report_a), label(report_b)],
+        "calibrated_document_pct": [calibrated(report_a), calibrated(report_b)],
+        "delta_calibrated_document_pct": round(calibrated(report_a) - calibrated(report_b), 1),
+        "operating_point_flagged": [flagged(report_a), flagged(report_b)],
+        # True where one model ran: that side's document_ai_pct, sentence_ai_pct
+        # and flagged_sentences are on the model's raw scale.
+        "raw_scale": [len(report_a.get("models", [])) == 1, len(report_b.get("models", [])) == 1],
         "delta_ai_pct": round(report_a["model_ai_pct"] - report_b["model_ai_pct"], 1),
         "delta_document_ai_pct": round(report_a["document_ai_pct"] - report_b["document_ai_pct"], 1),
         "sentence_ai_pct": [report_a["model_ai_pct"], report_b["model_ai_pct"]],
@@ -280,7 +300,6 @@ def compare(report_a, report_b):
         "flagged_sentences": [report_a["ai_count"], report_b["ai_count"]],
         "patterns": [patterns(report_a), patterns(report_b)],
         "tells": [tell_total(report_a), tell_total(report_b)],
-        "verdicts": [verdict(report_a["document_ai_pct"]), verdict(report_b["document_ai_pct"])],
     }
 
 

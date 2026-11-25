@@ -1,8 +1,8 @@
 # Changelog
 
-## [2.0.0] - 2026-11-24 (prepared, not published)
+## [2.0.0] - 2026-11-25 (prepared, not published)
 
-Previous version: 1.0.0. This is a major version because existing installs are affected: the Python floor rises from 3.9 to 3.11, the MCP server now runs detection in a second process, and `get_model_status` gains states it did not have before. The CLI flags and the five original MCP tool names, parameters and result keys are unchanged.
+Previous version: 1.0.0. This is a major version because existing installs are affected: the default model changes from `desklib` to `gpttrace-150m`, the Python floor rises from 3.9 to 3.11, the MCP server now runs detection in a second process, and `get_model_status` gains states it did not have before. The CLI flags and the five original MCP tool names, parameters and result keys are unchanged.
 
 ### Fixed
 - **The MCP server hung on Windows.** With a thread blocked reading standard input, loading a C-extension module in another thread never completes. The server imported its ML libraries in a background thread after the stdio loop started, so detect calls waited for ever. Detection now runs in a separate engine process with its standard input closed.
@@ -24,9 +24,15 @@ Previous version: 1.0.0. This is a major version because existing installs are a
   - Temp files written for uploaded `.html` content were left behind by Compare, and by Scan when the model id was wrong.
   - On Windows the engine could exit at once, or wait on the wrong handle, when watching for its parent process: the handle functions are now declared with pointer-sized handles, and if the handle cannot be opened the engine polls whether the parent is alive.
   - A progress listener was left registered after every blocking download.
+- Found while documenting, 25 Nov 2026:
+  - A URL scan printed a Python traceback when Playwright was installed but its driver or Chromium could not start (missing system libraries on a bare Linux image, for example). It now prints the install message, the `playwright install --with-deps chromium` command and the underlying error line.
+  - The dashboard's History and Batch tables showed a single-model scan's raw document score beside a verdict taken from the calibrated one. They now show the calibrated score, as the result page does, and mark the raw sentence mean as raw.
+  - The dashboard's Compare table read "LIKELY AI" on both sides while the two cards above it read "Likely AI" and "Uncertain". The table now repeats the cards' verdict and calibrated score; the raw rows are labelled raw.
+  - A download message could say "about 1 min left" beside `eta_seconds: 6`. Under 45 seconds it now says "less than a minute left", and otherwise the nearest whole minute. The command-line progress bar and the dashboard use the same wording.
+  - `scripts/make_screenshots.py` now starts its own dashboard on the default port with a neutral data folder, so no screenshot shows a temp path, a user folder or a fallback port.
 
 ### Added
-- A model registry with six detectors: `desklib` (still the default), `light`, `gpttrace-150m`, `gpttrace-1b`, `tabularis`, `conpara`. Each carries its licence, size and RAID rank with source and read date.
+- A model registry with six detectors: `gpttrace-150m` (the default), `gpttrace-1b`, `desklib`, `light`, `tabularis`, `conpara`. Each carries its licence, size and RAID rank with source and read date.
 - Ensembles: `--model a,b,c` or `--ensemble`, up to five models, each read at its own calibrated operating point.
 - Document-level scores (passages of about 200 words) beside the per-sentence scores, and an assessment with a stated confidence.
 - URL input (`--url`, MCP `detect_ai_url`, web UI) through headless Chromium. Optional `[web]` extra.
@@ -40,6 +46,16 @@ Previous version: 1.0.0. This is a major version because existing installs are a
 - Packaging prepared: npm launcher `@houtini/ai-detect`, `server.json`, MCPB `manifest.json`, release checks.
 
 ### Changed
+- **The default model is `gpttrace-150m`. It was `desklib`.** A bare `ai-detect draft.txt`, an MCP detect call with no `model`, and the dashboard's first scan now use it.
+  - Why (figures from `docs/MODEL-EVAL-2026-11.md`, CPU, 24 Nov 2026): the download is 151 MB against 1.74 GB; it scores a sentence in 6.2 ms against 49.8 ms; it is 4th of 61 on RAID against 42nd; 8% of human passages scored over 0.5 against 12%; 3 of 24 casual sentences scored over 0.5 against 17. Its passage AUROC on the local corpus is lower (0.969 against 0.996).
+  - Licence: the `gpttrace-150m` weights are CC BY-SA 4.0 (`desklib` is MIT). ai-detect downloads them from the authors' Hugging Face repo and does not redistribute them. Running the model puts no condition on your text, on the results or on ai-detect's MIT code. Attribution and share-alike apply to someone who redistributes or adapts the weights themselves.
+  - To keep the old behaviour: `--model desklib` on the command line, `"model": "desklib"` in an MCP call, or tick desklib in the dashboard. `desklib` is unchanged and still supported. Scores from the two models are not comparable with each other.
+- ONNX Runtime (`onnxruntime>=1.20`, the CPU build) is now a core dependency, because the default model runs on it. `pip install .` is enough for the default. The `light` and `onnx` extras remain as aliases that add nothing.
+- The `gpu-directml` extra installs nothing now. It used to install `onnxruntime-directml`, which cannot share an environment with the core `onnxruntime`: both ship the same package folder, and with both installed the CPU build won (providers were `AzureExecutionProvider` and `CPUExecutionProvider` only, checked 25 Nov 2026). To run the ONNX models on a GPU, replace the build after installing: `pip uninstall -y onnxruntime`, then `pip install --force-reinstall onnxruntime-directml` (Windows) or `onnxruntime-gpu` (NVIDIA CUDA). With no GPU build installed the ONNX models run on the CPU on every platform.
+- The npm launcher no longer asks uv for the `light` extra (`AI_DETECT_EXTRAS` still adds extras).
+- Compare (`ai-detect --compare`, MCP `compare_texts`, the dashboard): `verdicts` now holds each side's assessment label ("Likely AI", "Uncertain", "Likely human") in place of the 1.0.0 words read from the raw score, and the result gains `calibrated_document_pct`, `delta_calibrated_document_pct`, `operating_point_flagged` and `raw_scale`.
+- History and batch rows gain `calibrated_document_pct` and `raw_scale`; the batch CSV gains the same two columns.
+- The command line prints an `Assessment:` line (label, calibrated document score, confidence) and marks the single-model sentence mean and document score as raw.
 - Python 3.11 or later is required (current torch, transformers and onnxruntime need it).
 - `get_model_status` and `list_models` return more fields. `status` keeps the old words (`ready`, `downloading`, `absent`) and adds `failed`; the new `state` field says `not_downloaded` for absent.
 - A detect call made while the model is still downloading returns `status: "downloading"` at once instead of waiting.

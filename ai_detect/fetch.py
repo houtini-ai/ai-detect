@@ -56,8 +56,36 @@ INSTALL_HINT = (
 )
 
 
+DEPS_HINT = (
+    "If both are installed and the browser still cannot start, the system is missing "
+    "libraries it needs. On Debian or Ubuntu run (as root, or with sudo):\n"
+    "    playwright install --with-deps chromium"
+)
+
+# What Playwright says when Chromium or its driver cannot start at all, as
+# against a page that would not load.
+_NOT_INSTALLED = ("Executable doesn't exist", "playwright install")
+_MISSING_LIBRARIES = (
+    "missing dependencies", "error while loading shared libraries",
+    "cannot open shared object file", "Failed to launch",
+)
+
+
 class UrlFetchUnavailable(RuntimeError):
-    """Playwright (or its Chromium) is not installed."""
+    """Playwright (or its Chromium) is not installed, or cannot start."""
+
+
+def _cannot_start(error):
+    """The install message, plus the line of ``error`` that says what failed."""
+    frame = set("\u2550\u2554\u2557\u255a\u255d\u2551+-=| \t")
+    lines = [ln.strip("\u2551| \t") for ln in str(error).splitlines() if set(ln) - frame]
+    first = lines[0] if lines else type(error).__name__
+    telling = next((ln for ln in lines if any(m in ln for m in _MISSING_LIBRARIES)), first)
+    if telling != first and first.startswith("BrowserType.launch"):
+        telling = f"{first.rstrip(':')}: {telling}" if len(first) < 30 else telling
+    return UrlFetchUnavailable(
+        f"{INSTALL_HINT}\n{DEPS_HINT}\nThe underlying error was: "
+        f"{type(error).__name__}: {telling[:400]}")
 
 
 class UrlFetchError(RuntimeError):
@@ -355,15 +383,23 @@ def _render(target, timeout, screenshot):
 
     guard = None if private_urls_allowed() else _Guard()
     try:
-        with sync_playwright() as p:
+        manager = sync_playwright()
+        try:
+            # Starts Playwright's driver (a bundled Node). On a system without
+            # the libraries it needs this fails with a plain Exception or an
+            # OSError, not a PlaywrightError.
+            p = manager.__enter__()
+        except Exception as e:
+            raise _cannot_start(e) from e
+        try:
             try:
                 # The fetcher has one page. This Chromium switch makes window.open
                 # and every other script-opened window fail, so there is never a
                 # second page outside the request guard below.
                 browser = p.chromium.launch(headless=True, args=["--block-new-web-contents"])
             except PlaywrightError as e:
-                if "Executable doesn't exist" in str(e) or "playwright install" in str(e):
-                    raise UrlFetchUnavailable(INSTALL_HINT) from e
+                if any(mark in str(e) for mark in _NOT_INSTALLED + _MISSING_LIBRARIES):
+                    raise _cannot_start(e) from e
                 raise
             try:
                 context = browser.new_context(
@@ -404,6 +440,11 @@ def _render(target, timeout, screenshot):
                 return snapshot, shot, status, page.url, clipped
             finally:
                 browser.close()
+        finally:
+            try:
+                manager.__exit__(None, None, None)
+            except Exception:
+                pass  # the driver has already gone
     except UrlFetchUnavailable:
         raise
     except PlaywrightError as e:

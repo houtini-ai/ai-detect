@@ -30,7 +30,16 @@ def print_results(data, label=""):
         print(f"{'=' * 70}")
 
     ai_pct = data["model_ai_pct"]
-    print(f"\n  Model AI score: {ai_pct}% - {verdict(ai_pct)}   [{data.get('model', '')}]")
+    # One model: the mean of its raw sentence probabilities. An ensemble: the
+    # mean of the calibrated ones. The words LIKELY AI / MIXED / LIKELY HUMAN
+    # are the 1.0.0 reading of that mean; the assessment below is the verdict.
+    raw = len(data.get("models", [])) < 2
+    print(f"\n  Model AI score{' (raw mean of sentences)' if raw else ''}: {ai_pct}% - "
+          f"{verdict(ai_pct)}   [{data.get('model', '')}]")
+    a = data.get("assessment") or {}
+    if a.get("label") and a.get("confidence") != "none":
+        print(f"  Assessment: {a['label']} (calibrated document score {a['ai_pct']}%, "
+              f"confidence {a['confidence']})")
 
     skipped = data.get("skipped_count", 0)
     scored = data["ai_count"] + data["human_count"]
@@ -49,7 +58,8 @@ def print_results(data, label=""):
     if "document_ai_pct" in data and scored:
         a = data.get("assessment", {})
         conf = f", confidence {a['confidence']}" if a.get("confidence") else ""
-        print(f"  Document score: {data['document_ai_pct']}% over {len(data['passages'])} "
+        print(f"  Document score{' (raw)' if raw else ''}: {data['document_ai_pct']}% over "
+              f"{len(data['passages'])} "
               f"passage(s), {data.get('words', 0)} words{conf}")
         op = data.get("operating_point")
         if op:
@@ -122,7 +132,9 @@ def _fail(message, code=1):
 def _progress_bar(status):
     width = 28
     filled = int(width * status["percent"] / 100)
-    eta = f" {status['eta_seconds'] // 60 + 1} min left" if status.get("eta_seconds") else ""
+    from .downloads import eta_text
+    eta = eta_text(status.get("eta_seconds"))
+    eta = f" {eta}" if eta else ""
     sys.stderr.write(f"\r  {status['model']:14} [{'#' * filled}{'.' * (width - filled)}] "
                      f"{status['percent']:5.1f}% of {status['bytes_total'] / 1048576:.0f} MB{eta}   ")
     sys.stderr.flush()
@@ -331,7 +343,9 @@ def main(argv=None):
         prog="ai-detect",
         description="Local AI text detection: per-sentence and per-document scores, pattern "
                     "diagnostics, structure and style tells.",
-        epilog="Other commands: ai-detect serve | ai-detect download <model|all> | ai-detect models",
+        epilog="Other commands: ai-detect serve | ai-detect download <model|all> | ai-detect models. "
+               "The command line does not save scans: nothing is written unless --export names a "
+               "file. Scan history belongs to the dashboard (ai-detect serve) and the MCP server.",
     )
     parser.add_argument("--file", "-f", help="Path to a text, Markdown or HTML file")
     parser.add_argument("--text", "-t", help="Text string to analyse")
@@ -400,9 +414,12 @@ def main(argv=None):
                 for v, r in zip(args.compare, reports):
                     print_results(r, label=os.path.basename(v) if not is_url(v) else v)
                 c = compare(*reports)
-                print(f"  Change, {args.compare[0]} -> {args.compare[1]}: sentence score "
-                      f"{c['sentence_ai_pct'][0]}% -> {c['sentence_ai_pct'][1]}%, document "
-                      f"{c['document_ai_pct'][0]}% -> {c['document_ai_pct'][1]}%, patterns "
+                raw = " (raw)" if any(c["raw_scale"]) else ""
+                print(f"  Change, {args.compare[0]} -> {args.compare[1]}: assessment "
+                      f"{c['verdicts'][0]} -> {c['verdicts'][1]}, calibrated document score "
+                      f"{c['calibrated_document_pct'][0]}% -> {c['calibrated_document_pct'][1]}%, "
+                      f"sentence score{raw} {c['sentence_ai_pct'][0]}% -> {c['sentence_ai_pct'][1]}%, "
+                      f"document{raw} {c['document_ai_pct'][0]}% -> {c['document_ai_pct'][1]}%, patterns "
                       f"{c['patterns'][0]} -> {c['patterns'][1]}, tells {c['tells'][0]} -> {c['tells'][1]}\n")
             return 0
 
@@ -417,26 +434,30 @@ def main(argv=None):
                     r = run(source_for(item))
                     a = r["assessment"]
                     row.update(verdict=a["label"], confidence=a["confidence"],
+                               calibrated_document_pct=a["ai_pct"],
                                document_ai_pct=r["document_ai_pct"], sentence_ai_pct=r["model_ai_pct"],
+                               raw_scale=len(r["models"]) == 1,
                                words=r["words"], flagged=r["operating_point"]["flagged_sentences"],
                                tells=len(r["tells"]["structure"]) + len(r["tells"]["visual"]))
                 except (OSError, ValueError, UrlFetchError) as e:
                     row["error"] = str(e)
                 rows.append(row)
                 print(f"  [{n}/{len(items)}] {item}: "
-                      f"{row['error'] or row['verdict'] + ', document ' + str(row['document_ai_pct']) + '%'}",
+                      f"{row['error'] or row['verdict'] + ', document ' + str(row['calibrated_document_pct']) + '%'}",
                       file=sys.stderr)
             if args.export:
                 _export(args.export, rows)
             if args.json:
                 print(json.dumps(rows, indent=2))
             else:
-                print(f"\n  {'document':>9} {'sentences':>10} {'flagged':>8} {'tells':>6}  verdict        source")
+                print("\n  document = calibrated document score; sentences = mean sentence score "
+                      "(raw when one model ran)")
+                print(f"  {'document':>9} {'sentences':>10} {'flagged':>8} {'tells':>6}  verdict        source")
                 for row in rows:
                     if row["error"]:
                         print(f"  {'':>9} {'':>10} {'':>8} {'':>6}  ERROR          {row['label']}: {row['error']}")
                     else:
-                        print(f"  {row['document_ai_pct']:>8}% {row['sentence_ai_pct']:>9}% "
+                        print(f"  {row['calibrated_document_pct']:>8}% {row['sentence_ai_pct']:>9}% "
                               f"{row['flagged']:>8} {row['tells']:>6}  {row['verdict']:14} {row['label']}")
                 print()
             return 0

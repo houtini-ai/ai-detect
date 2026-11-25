@@ -65,7 +65,7 @@ def test_mcp_server_end_to_end(tmp_path):
     assert {"detect_ai_text", "detect_ai_file", "compare_texts", "get_model_status",
             "list_models"} <= set(out["tools"])                      # the original five
     assert {"detect_ai_url", "scan_batch", "prefetch", "open_dashboard"} <= set(out["tools"])
-    assert out["models"]["default"] == "desklib" and "light" in out["models"]["models"]
+    assert out["models"]["default"] == "gpttrace-150m" and "light" in out["models"]["models"]
     assert out["status"]["status"] == "ready" and out["status"]["downloaded"] is True
     assert "error" in out["unknown"] and "desklib" in out["unknown"]["available"]
     assert out["dash"]["url"].startswith("http://127.0.0.1:")

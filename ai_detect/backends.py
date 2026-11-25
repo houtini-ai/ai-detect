@@ -33,11 +33,11 @@ def _import(module, spec):
     try:
         return importlib.import_module(module)
     except ImportError as e:
-        extra = spec.extra or module
+        how = (f"From the ai-detect folder run:  pip install \".[{spec.extra}]\"   "
+               f"(or just: pip install {module})" if spec.extra
+               else f"Run:  pip install {module}")
         raise MissingRuntimeError(
-            f"Model '{spec.id}' needs the '{module}' package, which is not installed. "
-            f"From the ai-detect folder run:  pip install \".[{extra}]\"   "
-            f"(or just: pip install {module})"
+            f"Model '{spec.id}' needs the '{module}' package, which is not installed. {how}"
         ) from e
 
 
@@ -73,17 +73,54 @@ def resolve_torch_device(pref=None):
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+ONNX_GPU_PROVIDERS = ("DmlExecutionProvider", "CUDAExecutionProvider", "ROCMExecutionProvider")
+ONNX_GPU_BUILDS = ("onnxruntime-directml", "onnxruntime-gpu")
+ONNX_GPU_HINT = (
+    "To run the ONNX models on a GPU, replace the CPU build of ONNX Runtime with a GPU "
+    "build (they cannot be installed side by side):  pip uninstall -y onnxruntime  then  "
+    "pip install --force-reinstall onnxruntime-directml  (Windows, DirectML)  or  "
+    "pip install --force-reinstall onnxruntime-gpu  (NVIDIA CUDA)."
+)
+
+
+def _installed_onnx_builds():
+    """Which onnxruntime distributions pip knows about in this environment."""
+    from importlib import metadata
+    found = []
+    for name in ("onnxruntime",) + ONNX_GPU_BUILDS:
+        try:
+            metadata.version(name)
+            found.append(name)
+        except metadata.PackageNotFoundError:
+            pass
+    return found
+
+
 def onnx_providers(ort, device):
-    """Prefer a GPU execution provider when installed and wanted; else CPU."""
+    """The execution providers for an ONNX model, in order.
+
+    CPU is always last, and is the whole answer when no GPU provider is in the
+    installed onnxruntime build (the plain ``onnxruntime`` wheel on Windows,
+    Linux and macOS has none this function selects) or when the device is
+    'cpu'. A GPU provider is used only from a GPU build of ONNX Runtime:
+    ``onnxruntime-directml`` (DmlExecutionProvider, Windows) or
+    ``onnxruntime-gpu`` (CUDAExecutionProvider). CoreML, which the macOS wheel
+    carries, is not selected: it is untested with these quantised models.
+    """
     available = ort.get_available_providers()
     pref = device_pref(device)
     if pref == "cpu":
         return ["CPUExecutionProvider"]
-    gpu_order = ["DmlExecutionProvider", "CUDAExecutionProvider", "ROCMExecutionProvider"]
-    chosen = [p for p in gpu_order if p in available]
-    if pref == "cuda" and not chosen:
-        _log("Requested GPU but no GPU execution provider is installed "
-             "(try: pip install onnxruntime-directml) — using CPU.")
+    chosen = [p for p in ONNX_GPU_PROVIDERS if p in available]
+    if not chosen:
+        builds = _installed_onnx_builds()
+        clash = [b for b in builds if b in ONNX_GPU_BUILDS]
+        if clash and "onnxruntime" in builds:
+            _log(f"{clash[0]} is installed beside onnxruntime, and the CPU build has "
+                 f"overwritten it, so no GPU provider is available. {ONNX_GPU_HINT}")
+        elif pref == "cuda":
+            _log(f"Requested GPU but no GPU execution provider is installed; using CPU. "
+                 f"{ONNX_GPU_HINT}")
     return chosen + ["CPUExecutionProvider"]
 
 
