@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/logo.png" width="120" height="120" alt="ai-detect logo" />
+  <img src="https://raw.githubusercontent.com/houtini-ai/ai-detect/main/assets/logo.png" width="120" height="120" alt="ai-detect logo" />
 </div>
 
 # ai-detect - an AI text detector that runs on your own machine
@@ -8,7 +8,7 @@ I built ai-detect because I wanted to see, sentence by sentence, what AI detecto
 
 You get a verdict for the whole document, a score for every sentence, plain reasons and rewrite suggestions for the flagged ones, and a separate list of page-level "structure and style" tells. There are three ways in: a command-line tool, an MCP server for Claude, and a web dashboard on 127.0.0.1. MIT licensed.
 
-![A result page in the dashboard: the verdict "Likely human", a document score of 13.7% with high confidence, 1 of 151 sentences flagged, the note "All 5 models agree.", the scanned text shaded by score, and a side panel with five models' scores for one sentence](docs/screenshots/result-ensemble-light.png)
+![A result page in the dashboard: the verdict "Likely human", a document score of 13.7% with high confidence, 1 of 151 sentences flagged, the note "All 5 models agree.", the scanned text shaded by score, and a side panel with five models' scores for one sentence](https://raw.githubusercontent.com/houtini-ai/ai-detect/main/docs/screenshots/result-ensemble-light.png)
 
 That's a five-model scan of one web page, made on 25 Nov 2026. It shows what the tool reported for that page on that day. It's a demonstration of the tool, and it isn't a finding about the article or whoever wrote it.
 
@@ -18,11 +18,11 @@ Every model here is strong on passages and weak on single sentences.
 
 In my evaluation the best model caught every AI passage at a 5% false-positive rate, and 42% of AI sentences. The default model caught 90% of passages and 29% of sentences. So the document score is the number to quote. The per-sentence shading is a rough signal, and I'd treat a flagged sentence as a prompt to read the line again.
 
-Scores are evidence, not proof. The measurements are in [Models](#models) and in [`docs/MODEL-EVAL-2026-11.md`](docs/MODEL-EVAL-2026-11.md).
+Scores are evidence, not proof. The measurements are in [Models](#models) and in [`docs/MODEL-EVAL-2026-11.md`](https://github.com/houtini-ai/ai-detect/blob/main/docs/MODEL-EVAL-2026-11.md).
 
-![Pipeline diagram: an input (text, a file or one URL) becomes one structured document, and four signals are computed from it and reported side by side](docs/diagrams/pipeline.svg)
+![Pipeline diagram: an input (text, a file or one URL) becomes one structured document, and four signals are computed from it and reported side by side](https://raw.githubusercontent.com/houtini-ai/ai-detect/main/docs/diagrams/pipeline.png)
 
-Whatever you give it is parsed into headings, paragraphs and lists, split into sentences, and packed into passages of about 200 words. Four signals come out: the model scores, the sentence patterns, the structure and style tells, and (if you ask) perplexity. The model score never includes the other three. They explain it and cross-check it. There's more in [`docs/HOW-IT-WORKS.md`](docs/HOW-IT-WORKS.md).
+Whatever you give it is parsed into headings, paragraphs and lists, split into sentences, and packed into passages of about 200 words. Four signals come out: the model scores, the sentence patterns, the structure and style tells, and (if you ask) perplexity. The model score never includes the other three. They explain it and cross-check it. There's more in [`docs/HOW-IT-WORKS.md`](https://github.com/houtini-ai/ai-detect/blob/main/docs/HOW-IT-WORKS.md).
 
 ## Contents
 
@@ -147,7 +147,7 @@ apt-get install -y libatomic1
 playwright install --with-deps chromium
 ```
 
-All three steps were needed on `debian:12`, `debian:12-slim` and `ubuntu:24.04` images. The transcript is in [`docs/proofs/linux-venv-2026-11-25.md`](docs/proofs/linux-venv-2026-11-25.md). A desktop Linux install that already has a browser's libraries wasn't tried. Chromium is about 700 MB on disk.
+All three steps were needed on `debian:12`, `debian:12-slim` and `ubuntu:24.04` images. The transcript is in [`docs/proofs/linux-venv-2026-11-25.md`](https://github.com/houtini-ai/ai-detect/blob/main/docs/proofs/linux-venv-2026-11-25.md). A desktop Linux install that already has a browser's libraries wasn't tried. Chromium is about 700 MB on disk.
 
 **npx.** Set `AI_DETECT_EXTRAS=web` and the launcher adds the Playwright package. Chromium still has to be installed, so for URL scanning I'd use a clone install.
 
@@ -199,17 +199,17 @@ The screenshots below are from scans made on 25 Nov 2026, on CPU. Most show one 
 
 ### Scan
 
-![The scan form: the URL tab is selected and the model picker lists each model with its size, RAID rank and download state](docs/screenshots/scan-form-light.png)
+![The scan form: the URL tab is selected and the model picker lists each model with its size, RAID rank and download state](https://raw.githubusercontent.com/houtini-ai/ai-detect/main/docs/screenshots/scan-form-light.png)
 
 Paste text, drop a `.txt`, `.md` or `.html` file on the box, type a URL, or pick a file. Tick one model or up to five. A sixth tick is refused. The two options are perplexity, and loading models one at a time. While a scan runs you see a download bar for any model that isn't on disk yet, then loading and scoring progress for each model.
 
 ### Result
 
-![Result of a single-model scan with the default, gpttrace-150m: the verdict "Likely human", a document score of 6.3% with high confidence, 11 of 151 sentences flagged, the text shaded by score, and the detail for one sentence](docs/screenshots/result-single-model-light.png)
+![Result of a single-model scan with the default, gpttrace-150m: the verdict "Likely human", a document score of 6.3% with high confidence, 11 of 151 sentences flagged, the text shaded by score, and the detail for one sentence](https://raw.githubusercontent.com/houtini-ai/ai-detect/main/docs/screenshots/result-single-model-light.png)
 
 The verdict comes first: the label, the calibrated document score, the confidence, how many sentences were flagged, and a bar of words reading as AI, uncertain or human. Notes sit underneath.
 
-![Schematic of a result page in six numbered parts. The figures in it are illustrative, not from a scan](docs/diagrams/result-anatomy.svg)
+![Schematic of a result page in six numbered parts. The figures in it are illustrative, not from a scan](https://raw.githubusercontent.com/houtini-ai/ai-detect/main/docs/diagrams/result-anatomy.png)
 
 - **Document score** is the calibrated score of the passages. It's the number to quote. Over 60 reads "Likely AI", under 40 "Likely human", and anything between is "Uncertain".
 - **Confidence** drops to low when the text is under about 150 words, when the score is near 50%, or when the models disagree.
@@ -223,7 +223,7 @@ There are three views of the document:
 | **Sentences** | A table with one column per model, agreement dots and the combined score |
 | **Page** | URL scans only: the screenshot with tells outlined and numbered |
 
-![The Sentences view in the dark theme: a table with one calibrated column per model, agreement dots and the combined score](docs/screenshots/ensemble-sentences-table-dark.png)
+![The Sentences view in the dark theme: a table with one calibrated column per model, agreement dots and the combined score](https://raw.githubusercontent.com/houtini-ai/ai-detect/main/docs/screenshots/ensemble-sentences-table-dark.png)
 
 And five tabs in the side panel:
 
@@ -235,19 +235,19 @@ And five tabs in the side panel:
 | **Models** | Each model's facts and its view of the document |
 | **Signals** | Sentence-length variation, perplexity and burstiness, the passages, and the optional vision second opinion |
 
-![The Tells tab: the list of structure and style tells, with the selected tell highlighted in the text](docs/screenshots/tells-panel-light.png)
+![The Tells tab: the list of structure and style tells, with the selected tell highlighted in the text](https://raw.githubusercontent.com/houtini-ai/ai-detect/main/docs/screenshots/tells-panel-light.png)
 
-![The Rewrite tab: flagged sentences listed with their suggestions](docs/screenshots/rewrite-panel-light.png)
+![The Rewrite tab: flagged sentences listed with their suggestions](https://raw.githubusercontent.com/houtini-ai/ai-detect/main/docs/screenshots/rewrite-panel-light.png)
 
-![The Models tab: each model's facts and its view of the document](docs/screenshots/models-panel-light.png)
+![The Models tab: each model's facts and its view of the document](https://raw.githubusercontent.com/houtini-ai/ai-detect/main/docs/screenshots/models-panel-light.png)
 
-![The Signals tab: sentence-length variation, GPT-2 perplexity and burstiness, and the passages](docs/screenshots/signals-perplexity-light.png)
+![The Signals tab: sentence-length variation, GPT-2 perplexity and burstiness, and the passages](https://raw.githubusercontent.com/houtini-ai/ai-detect/main/docs/screenshots/signals-perplexity-light.png)
 
 From a result you can export an HTML report, a CSV or JSON, and delete the scan.
 
 ### Compare
 
-![The Compare page with the two bundled example files scanned by five models: "Likely AI" at 83.6% on one side and "Uncertain" at 58.2% on the other, with a table of before, after and change](docs/screenshots/compare-light.png)
+![The Compare page with the two bundled example files scanned by five models: "Likely AI" at 83.6% on one side and "Uncertain" at 58.2% on the other, with a table of before, after and change](https://raw.githubusercontent.com/houtini-ai/ai-detect/main/docs/screenshots/compare-light.png)
 
 Two boxes, each taking text or one URL. It's meant for a draft against an edit. You get both verdicts side by side and a table with before, after and change for each row:
 
@@ -261,7 +261,7 @@ One URL or file path per line, several dropped files, or both. Rows appear as th
 
 ### History
 
-![The History page: past scans newest first. The row for the worked example reads "Likely human" with a document score of 6.3%, and its sentence mean is marked "61.5% raw"](docs/screenshots/history-light.png)
+![The History page: past scans newest first. The row for the worked example reads "Likely human" with a document score of 6.3%, and its sentence mean is marked "61.5% raw"](https://raw.githubusercontent.com/houtini-ai/ai-detect/main/docs/screenshots/history-light.png)
 
 Every scan made through the dashboard or the MCP server, newest first. Click one to reopen it. The Document column is the calibrated document score, the same figure and verdict as the result page. The Sentences column is a raw mean when one model ran, and it's marked `raw`. A switch turns saving to disk off, and Clear history deletes everything.
 
@@ -269,7 +269,7 @@ Command-line scans aren't saved. See [History, export and batch](#history-export
 
 ### Models
 
-![The Models page: each model's size, licence, RAID rank with its source, and download state](docs/screenshots/models-light.png)
+![The Models page: each model's size, licence, RAID rank with its source, and download state](https://raw.githubusercontent.com/houtini-ai/ai-detect/main/docs/screenshots/models-light.png)
 
 Size, licence, RAID rank with a source link and the date it was read, caveats from the model cards, and Download or Retry with a live progress bar.
 
@@ -387,7 +387,7 @@ An error is one line and a non-zero exit code. A mistyped file name gives `File 
 
 `--json` prints the full report, which is also what the dashboard reads. The verdict is under `assessment`: `label`, `ai_pct` (the calibrated document score), `confidence`, `notes` and `breakdown`.
 
-Some keys keep their 1.0.0 names and meanings so old scripts still work. With one model, `model_ai_pct`, `document_ai_pct` and each sentence's `ai_prob` and `label` are raw. With several models, `ai_prob` is the ensemble's calibrated mean. The full key list is in [`docs/FEATURES.md`](docs/FEATURES.md), section 3.
+Some keys keep their 1.0.0 names and meanings so old scripts still work. With one model, `model_ai_pct`, `document_ai_pct` and each sentence's `ai_prob` and `label` are raw. With several models, `ai_prob` is the ensemble's calibrated mean. The full key list is in [`docs/FEATURES.md`](https://github.com/houtini-ai/ai-detect/blob/main/docs/FEATURES.md), section 3.
 
 ## The MCP server
 
@@ -457,7 +457,7 @@ claude mcp add ai-detect -- ai-detect-mcp
 
 `model` takes one id, or up to five comma-separated ids to run as an ensemble. All the tools are read-only except `prefetch` and `open_dashboard`.
 
-A detect result carries the document score with its confidence under `assessment`, the flagged sentences with their patterns and rewrite suggestions, the structure and style tells, a `scan_id`, and `dashboard_url`, a local page with the highlighted text. The top-level `verdict` keeps the 1.0.0 words and is read from the raw sentence mean. The calibrated verdict is `assessment.label`. The full return shapes are in [`docs/FEATURES.md`](docs/FEATURES.md), section 4.
+A detect result carries the document score with its confidence under `assessment`, the flagged sentences with their patterns and rewrite suggestions, the structure and style tells, a `scan_id`, and `dashboard_url`, a local page with the highlighted text. The top-level `verdict` keeps the 1.0.0 words and is read from the raw sentence mean. The calibrated verdict is `assessment.label`. The full return shapes are in [`docs/FEATURES.md`](https://github.com/houtini-ai/ai-detect/blob/main/docs/FEATURES.md), section 4.
 
 The server also sends instructions at initialize. They tell Claude that scores are evidence, not proof, to report the document score with its confidence and notes, and that single-sentence scores are a rough signal.
 
@@ -508,7 +508,7 @@ On passages every model did well: AUROC was 0.955 to 0.999. AUROC is the chance 
 
 There's a second problem with sentences. At the usual raw 0.5 cut-off, every model calls a large share of human sentences AI: from 39% (`conpara`) to 76% (`light`). The 1.0.0 tool labelled sentences at that cut-off. That's what the calibrated figure is for. Each model is re-read at the point where about 5% of human text is flagged, and the dashboard colours by that figure.
 
-The corpus behind this is small: 25 human passages and 31 AI passages, and the AI half comes from one generator. The human text is formal or old, which is the kind of prose detectors over-flag. It compares the models with each other on one machine. It isn't a benchmark. RAID is. The full table and its limits are in [`docs/MODEL-EVAL-2026-11.md`](docs/MODEL-EVAL-2026-11.md).
+The corpus behind this is small: 25 human passages and 31 AI passages, and the AI half comes from one generator. The human text is formal or old, which is the kind of prose detectors over-flag. It compares the models with each other on one machine. It isn't a benchmark. RAID is. The full table and its limits are in [`docs/MODEL-EVAL-2026-11.md`](https://github.com/houtini-ai/ai-detect/blob/main/docs/MODEL-EVAL-2026-11.md).
 
 ### Strengths and weaknesses
 
@@ -668,7 +668,7 @@ Refused to fetch http://localhost:8765/: localhost is a loopback address (this m
 
 `AI_DETECT_ALLOW_PRIVATE_URLS=1` is read from the environment of the process that does the fetching. For MCP that's the server's `env` block. No tool argument or dashboard control can set it.
 
-The rule has limits. A DNS answer that changes between the check and the fetch (DNS rebinding) isn't caught, and WebSocket connections aren't inspected. The finer points are in [`docs/FEATURES.md`](docs/FEATURES.md), section 8.
+The rule has limits. A DNS answer that changes between the check and the fetch (DNS rebinding) isn't caught, and WebSocket connections aren't inspected. The finer points are in [`docs/FEATURES.md`](https://github.com/houtini-ai/ai-detect/blob/main/docs/FEATURES.md), section 8.
 
 ## History, export and batch
 
@@ -678,7 +678,7 @@ Command-line scans aren't saved to history. To keep one, use `--export report.ht
 
 **Export.** From a result page: an HTML report, CSV or JSON. The HTML report shows the calibrated document score, and for a single-model scan the raw one on its own labelled line.
 
-![The exported HTML report](docs/screenshots/export-html-report-light.png)
+![The exported HTML report](https://raw.githubusercontent.com/houtini-ai/ai-detect/main/docs/screenshots/export-html-report-light.png)
 
 **Batch.** Three ways in:
 
@@ -735,9 +735,9 @@ The dashboard has no telemetry.
 - **A multi-GB model download through an MCP client** wasn't run. A 126 MB one was.
 - **Download progress.** The first line of a progress bar can show a very large time estimate before any speed is known.
 
-If you're coming from a hosted detector such as GPTZero, the trade is roughly this. You keep your text on your own machine, you can run several detectors side by side, and you get rewrite suggestions and the structure and visual tells. You give up a trained mixed-authorship class, paraphrase resistance, plagiarism checks, DOCX and PDF input, and published accuracy benchmarks for the product as a whole. [`docs/FEATURES.md`](docs/FEATURES.md) has the feature-by-feature table with its sources.
+If you're coming from a hosted detector such as GPTZero, the trade is roughly this. You keep your text on your own machine, you can run several detectors side by side, and you get rewrite suggestions and the structure and visual tells. You give up a trained mixed-authorship class, paraphrase resistance, plagiarism checks, DOCX and PDF input, and published accuracy benchmarks for the product as a whole. [`docs/FEATURES.md`](https://github.com/houtini-ai/ai-detect/blob/main/docs/FEATURES.md) has the feature-by-feature table with its sources.
 
-**Coming from 1.0.0?** Four things affect an existing install. The default model changed from `desklib` to `gpttrace-150m`. The Python floor rose from 3.9 to 3.11. The MCP server now runs detection in a second process. And `get_model_status` gained states it didn't have before. An install that used the `[gpu-directml]` extra also loses its GPU provider until you do the swap in [GPU routes](#gpu-routes). The CLI flags and the five original MCP tool names, parameters and result keys are unchanged. The rest is in [`CHANGELOG.md`](CHANGELOG.md).
+**Coming from 1.0.0?** Four things affect an existing install. The default model changed from `desklib` to `gpttrace-150m`. The Python floor rose from 3.9 to 3.11. The MCP server now runs detection in a second process. And `get_model_status` gained states it didn't have before. An install that used the `[gpu-directml]` extra also loses its GPU provider until you do the swap in [GPU routes](#gpu-routes). The CLI flags and the five original MCP tool names, parameters and result keys are unchanged. The rest is in [`CHANGELOG.md`](https://github.com/houtini-ai/ai-detect/blob/main/CHANGELOG.md).
 
 ## Environment variables
 
@@ -789,13 +789,13 @@ A few things only a maintainer needs:
 - **MCP details.** It works with MCP Python SDK 1.x and 2.x, and the pin is `mcp>=1.10,<3`. `python -m ai_detect.server` starts the server too. While a scan runs the server sends progress notifications if the client supplied a `progressToken`. `ai-detect serve` has a hidden `--exit-with-parent` flag, which the MCP server uses.
 - **Model quirks.** The two GPTTrace models put their input through a normaliser that strips invisible characters and Cyrillic and Greek look-alikes. `tabularis` applies NFKC normalisation. `conpara`'s checkpoint is a pickled state dict, and ai-detect loads it with `weights_only=True` and an allow-list of numpy array types.
 - **A model with no fitted operating point** falls back to its raw scale and is listed under `uncalibrated_models` in the report.
-- **Proofs.** The install transcripts are [`docs/proofs/windows-venv-2026-11-25.md`](docs/proofs/windows-venv-2026-11-25.md) and [`docs/proofs/linux-venv-2026-11-25.md`](docs/proofs/linux-venv-2026-11-25.md).
+- **Proofs.** The install transcripts are [`docs/proofs/windows-venv-2026-11-25.md`](https://github.com/houtini-ai/ai-detect/blob/main/docs/proofs/windows-venv-2026-11-25.md) and [`docs/proofs/linux-venv-2026-11-25.md`](https://github.com/houtini-ai/ai-detect/blob/main/docs/proofs/linux-venv-2026-11-25.md).
 
-More reading: [`docs/FEATURES.md`](docs/FEATURES.md) (the full inventory, generated from real output), [`docs/MODEL-EVAL-2026-11.md`](docs/MODEL-EVAL-2026-11.md) (the measurements), [`docs/HOW-IT-WORKS.md`](docs/HOW-IT-WORKS.md) (the diagrams and the reasoning), [`CHANGELOG.md`](CHANGELOG.md).
+More reading: [`docs/FEATURES.md`](https://github.com/houtini-ai/ai-detect/blob/main/docs/FEATURES.md) (the full inventory, generated from real output), [`docs/MODEL-EVAL-2026-11.md`](https://github.com/houtini-ai/ai-detect/blob/main/docs/MODEL-EVAL-2026-11.md) (the measurements), [`docs/HOW-IT-WORKS.md`](https://github.com/houtini-ai/ai-detect/blob/main/docs/HOW-IT-WORKS.md) (the diagrams and the reasoning), [`CHANGELOG.md`](https://github.com/houtini-ai/ai-detect/blob/main/CHANGELOG.md).
 
 ## Licence
 
-ai-detect is MIT licensed. See [`LICENSE`](LICENSE).
+ai-detect is MIT licensed. See [`LICENSE`](https://github.com/houtini-ai/ai-detect/blob/main/LICENSE).
 
 It doesn't contain or redistribute any model weights. When you select a model, its files are downloaded from the authors' own Hugging Face repository to your machine, and that model's licence applies to your use of it.
 
@@ -804,6 +804,6 @@ It doesn't contain or redistribute any model weights. When you select a model, i
 | `desklib`, `light`, `tabularis`, `conpara`, GPT-2 (the perplexity readout) | MIT |
 | `gpttrace-150m`, `gpttrace-1b` | CC BY-SA 4.0 |
 
-The licences were read from each model card and the Hugging Face API on 24 Nov 2026. Check the card before commercial use, because a licence can change. The full table, and the note on the one vendored file (the ConPara input normaliser, MIT), is in [`THIRD-PARTY-MODELS.md`](THIRD-PARTY-MODELS.md). It's a plain-language summary, not legal advice.
+The licences were read from each model card and the Hugging Face API on 24 Nov 2026. Check the card before commercial use, because a licence can change. The full table, and the note on the one vendored file (the ConPara input normaliser, MIT), is in [`THIRD-PARTY-MODELS.md`](https://github.com/houtini-ai/ai-detect/blob/main/THIRD-PARTY-MODELS.md). It's a plain-language summary, not legal advice.
 
 Built by [Houtini](https://houtini.com).
