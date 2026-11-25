@@ -3,14 +3,15 @@
 //   node scripts/smoke_mcp.mjs <command> [args...]
 //
 // Starts the given MCP server command, completes initialize + tools/list, then
-// runs one tiny scan with the smallest model ("light"). If the model has to be
-// downloaded first it polls until the download finishes. Exits 0 on success.
+// runs one tiny scan with the server's default model (or the one named in
+// SMOKE_MODEL). If the model has to be downloaded first it polls until the
+// download finishes. Exits 0 on success.
 import { spawn } from 'node:child_process';
 
 const [command, ...args] = process.argv.slice(2);
 if (!command) { console.error('usage: node smoke_mcp.mjs <command> [args...]'); process.exit(2); }
 const TIMEOUT_MS = Number(process.env.SMOKE_TIMEOUT_MS || 1200000);
-const MODEL = process.env.SMOKE_MODEL || 'light';
+const MODEL = process.env.SMOKE_MODEL || '';
 const TEXT = 'Furthermore, the platform provides a seamless experience for modern teams. I do not love the price, though.';
 
 const child = spawn(command, args, { stdio: ['pipe', 'pipe', 'inherit'], shell: process.platform === 'win32' && /\.cmd$/i.test(command) });
@@ -56,7 +57,7 @@ for (const required of ['detect_ai_text', 'detect_ai_file', 'compare_texts', 'ge
 }
 let result;
 for (;;) {
-  result = await tool('detect_ai_text', { text: TEXT, model: MODEL, device: 'cpu' });
+  result = await tool('detect_ai_text', { text: TEXT, device: 'cpu', ...(MODEL ? { model: MODEL } : {}) });
   if (result.status === 'ok') break;
   if (result.status === 'failed') fail('model download failed: ' + result.message);
   console.log('  ' + result.message);

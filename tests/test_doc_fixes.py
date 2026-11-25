@@ -98,6 +98,7 @@ def test_playwright_that_cannot_start_gives_the_install_message(monkeypatch, kwa
     assert fetch.INSTALL_HINT in message
     assert needle in message
     assert "playwright install --with-deps chromium" in message
+    assert "apt-get install -y libatomic1" in message
 
 
 def test_cli_url_scan_prints_no_traceback_when_the_driver_cannot_start(monkeypatch, capsys):
@@ -120,6 +121,15 @@ def test_a_page_error_is_still_a_page_error(monkeypatch):
     with pytest.raises(fetch.UrlFetchError) as info:
         fetch._render("https://x.invalid/", 5, False)
     assert not isinstance(info.value, fetch.UrlFetchUnavailable)
+
+
+def test_a_refusal_by_a_running_playwright_is_not_called_an_install_problem(monkeypatch):
+    _fake_playwright(monkeypatch, start_error=FakePlaywrightError(
+        "It looks like you are using Playwright Sync API inside the asyncio loop."))
+    with pytest.raises(fetch.UrlFetchError) as info:
+        fetch._render("https://example.com/", 5, False)
+    assert not isinstance(info.value, fetch.UrlFetchUnavailable)
+    assert "asyncio loop" in str(info.value)
 
 
 # --- 2. The CLI does not write to history --------------------------------------

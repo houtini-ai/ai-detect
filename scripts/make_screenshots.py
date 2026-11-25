@@ -68,6 +68,9 @@ def engine_env(home):
     env["AI_DETECT_HOME"] = home
     env["AI_DETECT_PORT"] = str(DEFAULT_PORT)
     env["AI_DETECT_HISTORY"] = "on"
+    # CPU, so the figures can be reproduced on any machine and no GPU that is
+    # busy with something else is touched.
+    env["AI_DETECT_DEVICE"] = "cpu"
     env["PYTHONPATH"] = ROOT + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
     return env
 

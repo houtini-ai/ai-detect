@@ -59,7 +59,10 @@ INSTALL_HINT = (
 DEPS_HINT = (
     "If both are installed and the browser still cannot start, the system is missing "
     "libraries it needs. On Debian or Ubuntu run (as root, or with sudo):\n"
-    "    playwright install --with-deps chromium"
+    "    apt-get install -y libatomic1\n"
+    "    playwright install --with-deps chromium\n"
+    "(libatomic1 is for Playwright's own driver: without it neither playwright command "
+    "can run, and they print 'libatomic.so.1: cannot open shared object file'.)"
 )
 
 # What Playwright says when Chromium or its driver cannot start at all, as
@@ -389,6 +392,8 @@ def _render(target, timeout, screenshot):
             # the libraries it needs this fails with a plain Exception or an
             # OSError, not a PlaywrightError.
             p = manager.__enter__()
+        except PlaywrightError:
+            raise  # Playwright is running but refused the call: not an install problem
         except Exception as e:
             raise _cannot_start(e) from e
         try:

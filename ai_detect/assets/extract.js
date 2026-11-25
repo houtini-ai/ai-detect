@@ -23,11 +23,21 @@
     return r.width > 1 && r.height > 1;
   };
   const clean = (s) => (s || '').replace(/\s+/g, ' ').trim();
+  const paragraphText = (el) => Array.from(el.querySelectorAll('p')).reduce((n, p) => n + clean(p.textContent).length, 0);
+  const allParagraphText = paragraphText(document.body || document.documentElement);
+  const bulkCache = new Map();
+  const holdsTheBulk = (el) => {
+    if (!bulkCache.has(el)) bulkCache.set(el, allParagraphText >= 400 && paragraphText(el) >= 0.6 * allParagraphText);
+    return bulkCache.get(el);
+  };
   const isNoise = (el) => {
     if (SKIP_TAGS.has(el.tagName.toUpperCase())) return true;
     if (SKIP_ROLES.has(el.getAttribute('role') || '')) return true;
     const name = (el.id || '') + ' ' + (typeof el.className === 'string' ? el.className : '');
-    return NOISE.test(name);
+    // A noise word in a class name does not make the article itself noise:
+    // Substack's is <article class="newsletter-post post">. An element that
+    // holds most of the page's paragraph text is content whatever it is called.
+    return NOISE.test(name) && !holdsTheBulk(el);
   };
   const insideNoise = (el, stop) => {
     for (let n = el; n && n !== stop; n = n.parentElement) if (isNoise(n)) return true;

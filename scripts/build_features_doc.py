@@ -5,7 +5,7 @@
 Every `{{run: ...}}` in docs/features.template.md is replaced by that command
 and the output it actually printed on this machine; `{{tools}}`, `{{models}}`
 and `{{screenshots}}` are filled from the live MCP server, the registry and the
-screenshots folder. So the examples in FEATURES.md cannot drift from the code:
+screenshots folder, and the test counts from pytest's collection. So the examples in FEATURES.md cannot drift from the code:
 re-run this after a change. Commands run on CPU with the small 'light' model.
 """
 
@@ -86,7 +86,8 @@ def tools_section():
             f"`{name}`" + ("" if name in required else f" (`{json.dumps(p.get('default'))}`)")
             for name, p in props.items()) or "none"
         ro = getattr(t.annotations, "readOnlyHint", None) if t.annotations else None
-        dl = "yes" if "download" in (t.description or "").lower() and "Never triggers" not in t.description else "no"
+        description = " ".join((t.description or "").split())  # a docstring wraps anywhere
+        dl = "yes" if "download" in description.lower() and "Never triggers" not in description else "no"
         if t.name == "prefetch":
             dl = "yes (that is its job)"
         out.append(f"| `{t.name}` | {params} | {'yes' if ro else 'no'} | {dl} |")
@@ -119,7 +120,7 @@ def models_section():
     for mid, s in MODELS.items():
         raid = f"{s.raid.rank} of {s.raid.of} ({s.raid.score:.4f})"
         alias = f" ({', '.join(s.aliases)})" if s.aliases else ""
-        needs = {"torch": "core install"}.get(s.runtime, "") or f'`[{s.extra}]` extra (onnxruntime)'
+        needs = "core install"
         if s.extra == "conpara":
             needs = "`[conpara]` extra (sentencepiece)"
         default = " **default**" if mid == DEFAULT_MODEL else ""
@@ -140,7 +141,7 @@ def screenshots_section():
     names = sorted(n for n in os.listdir(folder) if n.endswith(".png"))
     captions = {
         "scan-form": "The scan form with the URL tab and the model picker",
-        "result-single-model": "Result of a single-model scan (desklib): verdict, highlighted text, sentence detail",
+        "result-single-model": "Result of a single-model scan (the default, gpttrace-150m): verdict, highlighted text, sentence detail",
         "result-ensemble": "Result of a five-model ensemble scan: the models disagree, so the verdict is Uncertain",
         "ensemble-sentences-table": "Sentence table with one calibrated column per model, agreement dots and the combined score",
         "tells-panel": "Structure and style tells; the selected tell is highlighted in the text",
@@ -161,12 +162,25 @@ def screenshots_section():
     return "\n".join(out)
 
 
+def count_tests(selection):
+    """How many tests pytest collects for a selection (nothing is run)."""
+    r = subprocess.run([sys.executable, "-m", "pytest", "--collect-only", "-q", selection],
+                       cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    m = re.search(r"(\d+) tests? collected", r.stdout)
+    if not m:
+        raise SystemExit("could not count tests:\n" + r.stdout[-500:] + r.stderr[-500:])
+    return int(m.group(1))
+
+
 def main():
     with open(os.path.join(ROOT, "docs", "features.template.md"), encoding="utf-8") as f:
         text = f.read()
     text = re.sub(r"\{\{run: (.+?)\}\}", lambda m: run(m.group(1)), text)
     text = text.replace("{{tools}}", tools_section()).replace("{{models}}", models_section())
     text = text.replace("{{screenshots}}", screenshots_section())
+    unit, ui = count_tests("--ignore=tests/ui"), count_tests("tests/ui")
+    text = (text.replace("{{unit_tests}}", str(unit)).replace("{{ui_tests}}", str(ui))
+            .replace("{{all_tests}}", str(unit + ui)))
     with open(os.path.join(ROOT, "docs", "FEATURES.md"), "w", encoding="utf-8", newline="\n") as f:
         f.write(text)
     print("wrote docs/FEATURES.md", len(text), "characters")
