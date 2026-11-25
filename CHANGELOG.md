@@ -30,6 +30,9 @@ Previous version: 1.0.0. This is a major version because existing installs are a
   - The dashboard's Compare table read "LIKELY AI" on both sides while the two cards above it read "Likely AI" and "Uncertain". The table now repeats the cards' verdict and calibrated score; the raw rows are labelled raw.
   - A download message could say "about 1 min left" beside `eta_seconds: 6`. Under 45 seconds it now says "less than a minute left", and otherwise the nearest whole minute. The command-line progress bar and the dashboard use the same wording.
   - `scripts/make_screenshots.py` now starts its own dashboard on the default port with a neutral data folder, so no screenshot shows a temp path, a user folder or a fallback port.
+  - The exported HTML report showed a single-model scan's raw document score under a verdict read from the calibrated one. It now shows the calibrated score, with the raw one on its own labelled line.
+  - A URL scan of a Substack post ended with "No readable article text". Two causes in the page extractor: the article element's own class name (`newsletter-post`) matched the noise list, and it sat inside a `display: contents` wrapper, which has an empty rectangle and was taken for an invisible element. An element that holds most of the page's paragraph text is now kept whatever it is called, and a `display: contents` wrapper counts as visible.
+  - When Playwright's own driver cannot start on Linux (its bundled Node needs `libatomic.so.1`, missing from the `debian:12`, `debian:12-slim` and `ubuntu:24.04` images), the message now names `apt-get install -y libatomic1`. Without that library neither `playwright install` command can run.
 
 ### Added
 - A model registry with six detectors: `gpttrace-150m` (the default), `gpttrace-1b`, `desklib`, `light`, `tabularis`, `conpara`. Each carries its licence, size and RAID rank with source and read date.

@@ -1,6 +1,8 @@
 """Start a dashboard, drive it and save the documentation screenshots.
 
-    python scripts/make_screenshots.py URL
+    python scripts/make_screenshots.py [URL]
+
+URL defaults to the worked example the docs use (WORKED_EXAMPLE_URL below).
 
 The script starts its own dashboard (this checkout's code) so that nothing
 local shows in a picture:
@@ -37,6 +39,9 @@ OUT = os.path.join(ROOT, "docs", "screenshots")
 DEFAULT_PORT = 8765  # ai_detect.web.server.DEFAULT_PORT; checked against it in main()
 BASE = f"http://127.0.0.1:{DEFAULT_PORT}"
 # The default model first, then the other four of the worked example.
+# The page the docs' worked example and screenshots are made from. One fetch of
+# this one page per scan; no sign-in, nothing clicked.
+WORKED_EXAMPLE_URL = "https://theaiengineer.substack.com/p/how-deepseek-distilled-r1"
 ENSEMBLE = ["gpttrace-150m", "desklib", "gpttrace-1b", "tabularis", "light"]
 _PRIVATE_PARTS = {"users", "home", "temp", "tmp", "appdata", "documents", "desktop"}
 
@@ -130,6 +135,30 @@ def job(base, kind, body):
         time.sleep(4)
 
 
+def figures(report):
+    """The numbers of one scan, without any of the page's text: what the docs
+    quote for the worked example."""
+    tells = report.get("tells") or {}
+    ppl = report.get("perplexity") or {}
+    scored = [s for s in report["sentences"] if s["label"] != "Skipped"]
+    return {
+        "scan_id": report["scan_id"], "created": report["created"], "models": report["models"],
+        "words": report["words"], "sentences_scored": len(scored), "passages": len(report["passages"]),
+        "assessment": {k: report["assessment"].get(k) for k in ("label", "ai_pct", "confidence", "notes", "breakdown")},
+        "document_ai_pct_raw_or_ensemble": report["document_ai_pct"],
+        "mean_sentence_pct_raw_or_ensemble": report["model_ai_pct"],
+        "sentences_over_half": report["ai_count"],
+        "operating_point": {k: report["operating_point"].get(k) for k in
+                            ("flagged_sentences", "flagged_passages", "calibrated_document_pct", "target_fpr")},
+        "per_model": report.get("per_model"),
+        "ensemble": report.get("ensemble"),
+        "structure_tells": [{k: t.get(k) for k in ("id", "label", "severity")} for t in tells.get("structure", [])],
+        "visual_tells": [{k: t.get(k) for k in ("id", "label", "severity")} for t in tells.get("visual", [])],
+        "perplexity": {k: ppl.get(k) for k in ppl if k != "per_sentence"} or None,
+        "page": report.get("page"),
+    }
+
+
 def capture(url):
     from playwright.sync_api import sync_playwright
 
@@ -198,12 +227,23 @@ def capture(url):
                 page.set_content(html); shot("export-html-report")
             ctx.close()
         browser.close()
-    print(json.dumps({"single": single, "ensemble": multi, "default_model": default_model}))
+    summary = {
+        "what": "What ai-detect reported for one web page on one day. A demonstration of the "
+                "tool, not a finding about the page or whoever wrote it. No page text is kept here.",
+        "url": url, "date": time.strftime("%Y-%m-%d"), "device": "cpu",
+        "version": call(BASE, "/api/state")["version"], "default_model": default_model,
+        "single": figures(call(BASE, f"/api/scans/{single}")),
+        "ensemble": figures(call(BASE, f"/api/scans/{multi}")),
+    }
+    path = os.path.join(ROOT, "docs", "eval-data", f"worked-example-{summary['date']}.json")
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(summary, f, indent=1, ensure_ascii=False)
+    print("wrote", os.path.relpath(path, ROOT))
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("url")
+    ap.add_argument("url", nargs="?", default=WORKED_EXAMPLE_URL)
     ap.add_argument("--home", default=neutral_home(),
                     help="AI_DETECT_HOME for the dashboard (shown on the History page)")
     args = ap.parse_args()

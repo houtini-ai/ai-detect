@@ -73,7 +73,9 @@ def to_html(report) -> str:
     words = report.get("words", "")
     assessment = report.get("assessment", {})
     label = html.escape(str(assessment.get("label", "")))
-    doc_pct = report.get("document_ai_pct", "")
+    # The figure the verdict is read from, as on the dashboard's result page.
+    raw_pct = report.get("document_ai_pct", "")
+    doc_pct = assessment.get("ai_pct", raw_pct)
     conf = html.escape(str(assessment.get("confidence", "")))
     notes = assessment.get("notes", [])
     bd = assessment.get("breakdown", {})
@@ -149,6 +151,9 @@ def to_html(report) -> str:
     out.append('<div class="verdict">')
     out.append("<h2>" + label + "</h2>")
     out.append('<div class="row">Document score: <b>' + html.escape(str(doc_pct)) + "%</b></div>")
+    if len(models) == 1:
+        out.append('<div class="row">Document score, raw (the probability the model itself '
+                   "gave, before calibration): <b>" + html.escape(str(raw_pct)) + "%</b></div>")
     out.append('<div class="row">Confidence: <b>' + conf + "</b></div>")
     for n in notes:
         out.append("<p>" + html.escape(str(n)) + "</p>")

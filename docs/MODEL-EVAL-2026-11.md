@@ -40,7 +40,7 @@ How to read it. AUROC is the chance a random AI item outscores a random human on
 
 ### The three findings that matter
 
-1. **Every model is good on passages and weak on single sentences.** Passage AUROC is 0.955 to 0.999. Sentence AUROC is 0.66 to 0.84, and at a 5% false-positive rate the best model catches 42% of AI sentences and the default catches 17%. Each model's card says the same in its own words: GPTTrace, "Text under ~150 words is unreliable for any detector"; ConPara, under 25 words "the score is meaningless". ai-detect's headline feature is per-sentence scoring, so this is the limit to be honest about.
+1. **Every model is good on passages and weak on single sentences.** Passage AUROC is 0.955 to 0.999. Sentence AUROC is 0.66 to 0.84, and at a 5% false-positive rate the best model catches 42% of AI sentences, `desklib` (the default when this was run) catches 17% and `gpttrace-150m` (the default since 25 Nov 2026) catches 29%. Each model's card says the same in its own words: GPTTrace, "Text under ~150 words is unreliable for any detector"; ConPara, under 25 words "the score is meaningless". ai-detect's headline feature is per-sentence scoring, so this is the limit to be honest about.
 2. **At the raw 0.5 cut-off every model calls a large share of human sentences AI**: from 39% (conpara) to 76% (light). The 1.0.0 tool labelled sentences at that cut-off. This is why 2.0.0 reports a calibrated figure beside the raw one, and why the web UI colours by the calibrated figure.
 3. **The documented contraction result does not reproduce with desklib today.** `docs/detection-patterns.md` reports "The software has been significantly improved" at 92.6% and "Software's got a lot better" at 0.03%. On 24 Nov 2026 desklib gives 91.9% and **79.7%**, with the original code at `main` (17609da) as well as with this branch, in float32 and in bfloat16. The formal figure matches; the casual one does not. Tokenisation was checked and is the same through three tokenizer paths. The cause is not established: the February figures may have come from a different library version, a GPU run, or the model that preceded desklib. Across the 24 pairs desklib still ranks the formal sentence higher 23 times, but it puts 17 of the 24 casual sentences over 0.5. **GPTTrace-1B does reproduce the documented pattern** on those two sentences (98.9% and 0.2%), and GPTTrace and ConPara put only 3 of 24 casual sentences over 0.5.
 
@@ -48,11 +48,11 @@ How to read it. AUROC is the chance a random AI item outscores a random human on
 
 Sources for licence, size and rank: the model card and the Hugging Face API for each repo; RAID rank from every `leaderboard/submissions/*/results.json` in https://github.com/liamdugan/raid at commit 84c2ea4 (16 Nov 2026), ranked on TPR at 5% FPR with all attacks, the leaderboard's default view (https://raid-bench.xyz/leaderboard). 61 submissions carry that score. All read 24 Nov 2026. A RAID rank is for whole documents.
 
-### desklib (the default)
+### desklib (the default until 25 Nov 2026)
 - **What it is.** desklib/ai-text-detector-v1.01, DeBERTa-v3-large, 434M parameters, 1.74 GB, MIT. https://huggingface.co/desklib/ai-text-detector-v1.01
 - **RAID.** 42nd of 61, 0.912. It was first when submitted on 16 Feb 2025.
 - **Strengths, measured.** Strong on passages here (AUROC 0.996, 97% at 5% FPR). Loads with stock transformers and torch. Permissive licence.
-- **Weaknesses, measured.** Largest download with the second-slowest CPU speed. Flags 60% of human sentences and 17 of 24 casual sentences at 0.5. Sentence-level catch rate at 5% FPR is 17%, joint lowest with conpara. On the XDA page (below) it was one of three models calling the document AI.
+- **Weaknesses, measured.** Largest download with the second-slowest CPU speed. Flags 60% of human sentences and 17 of 24 casual sentences at 0.5. Sentence-level catch rate at 5% FPR is 17%, joint lowest with conpara.
 - **Quirks.** Custom mean-pooled head defined in code. bfloat16 on CUDA, float32 on CPU, so scores differ slightly by device.
 
 ### light (TMR, int8 ONNX)
@@ -80,7 +80,7 @@ Sources for licence, size and rank: the model card and the Hugging Face API for 
 - **What it is.** tabularisai/ai-text-detection, ModernBERT-base, 149.6M parameters, 598 MB, MIT. https://huggingface.co/tabularisai/ai-text-detection
 - **RAID.** 21st of 61, 0.990 (entry "Tabularis ModernBERT R1.1 (NFKC)").
 - **Strengths, measured.** Passage AUROC 0.995 at 13 ms a sentence. Stock `AutoModelForSequenceClassification`. MIT.
-- **Weaknesses, measured.** The worst on the paired sentences: it ranks the formal sentence higher only 18 times in 24 and puts 18 of 24 casual sentences over 0.5. On the XDA page its document score (20%) disagreed with three other models. For an editing tool that points at lines, this is the wrong model.
+- **Weaknesses, measured.** The worst on the paired sentences: it ranks the formal sentence higher only 18 times in 24 and puts 18 of 24 casual sentences over 0.5. For an editing tool that points at lines, this is the wrong model.
 - **Quirks.** Needs transformers 4.48 or later (ModernBERT). NFKC normalisation before scoring, per its card.
 
 ### conpara
@@ -97,24 +97,26 @@ Sources for licence, size and rank: the model card and the Hugging Face API for 
 
 ## Worked example: one third-party page
 
-URL scanned: an XDA Developers article, `https://www.xda-developers.com/switched-home-server-ollama-llama-cpp-local-llm-got-faster/`, fetched once with Playwright on 24 Nov 2026. 720 words of article text in 39 scored sentences and 6 passages. **This shows what the tool printed for that page on that day. It is a demonstration of the tool and of how far the models disagree. It is not a finding about the article or its author.**
+URL scanned: a Substack article, `https://theaiengineer.substack.com/p/how-deepseek-distilled-r1`, fetched with Playwright on 25 Nov 2026 (once for each of the two runs below), on CPU. 2,064 words in 151 scored sentences and 17 passages. The figures are in `docs/eval-data/worked-example-2026-11-25.json`, which holds no page text. **This shows what the tool printed for that page on that day. It is a demonstration of the tool and of how far the models' raw scores differ. It is not a finding about the article or whoever wrote it.** This example replaced an earlier one on 25 Nov 2026, when the default model changed.
+
+The extracted text is the article plus some page furniture the extractor did not drop: a course banner near the top and, after the article, its footnotes, a subscribe heading, a byline line, a comments heading, three related-post titles and a closing heading.
 
 | Run | Verdict shown | Calibrated document score | Confidence shown | Sentences flagged at the operating point |
 |---|---|---|---|---|
-| desklib alone | Likely AI | 76.4% | moderate | 4 of 39 |
-| Five-model ensemble | Uncertain | 51.9% | low ("3 of 5 call this document AI") | 1 of 39 |
+| gpttrace-150m alone (the default) | Likely human | 6.3% | high | 11 of 151 |
+| Five-model ensemble | Likely human | 13.7% | high ("All 5 models agree.") | 1 of 151 |
 
-| Model (in the ensemble run) | Raw mean sentence score | Raw document score | Sentences over its threshold | Calls the document AI |
-|---|---|---|---|---|
-| desklib | 69.2% | 95.6% | 4 | yes |
-| gpttrace-150m | 43.1% | 79.7% | 0 | yes |
-| gpttrace-1b | 56.9% | 99.1% | 4 | yes |
-| tabularis | 60.7% | 20.3% | 4 | no |
-| light | 95.8% | 50.6% | 7 | no |
+| Model (in the ensemble run) | Raw mean sentence score | Sentences over 0.5, raw | Raw document score | Sentences over its threshold | Calls the document AI |
+|---|---|---|---|---|---|
+| gpttrace-150m | 61.5% | 93 | 8.0% | 11 | no |
+| desklib | 51.7% | 74 | 4.6% | 3 | no |
+| gpttrace-1b | 66.4% | 100 | 89.5% | 21 | no |
+| tabularis | 61.0% | 100 | 0.8% | 9 | no |
+| light | 65.2% | 109 | 9.5% | 0 | no |
 
-Structure and style tells: 4 (one hedge, one trailing "-ing" clause, paragraphs of even length, sentences of even length). Visual tells: none. GPT-2 perplexity: document 78.3, per-sentence mean 100.7, burstiness 79.5 (CV 0.79).
+Structure and style tells: 11 (four stock-vocabulary hits, seven Title Case headings). Visual tells: none. GPT-2 perplexity: document 238.0, per-sentence mean 352.6, burstiness 320.9 (CV 0.91).
 
-The lesson is in the spread. One model run alone printed "Likely AI". Five together printed "Uncertain" with low confidence, because the raw document scores ran from 20% to 99%. A single detector's number on a single article is not something to act on.
+What the figures show. The two runs printed the same verdict. The raw figures under it do not agree with each other: the five raw document scores run from 0.8% to 89.5%, and every model put between 74 and 109 of the 151 sentences over its own raw 0.5. Read at its own operating point, no model calls the document AI; `gpttrace-1b`'s raw 89.5% is below its passage threshold (finding 2 above, and the note on its hot raw scores). A raw percentage from one detector is not something to act on.
 
 ## The ensemble: method and limits
 
@@ -153,13 +155,13 @@ The lesson is in the spread. One model run alone printed "Likely AI". Five toget
 
 ## Recommendation on the default
 
-The default was **not** changed: it is still `desklib`.
+**Decided 25 Nov 2026: the default is `gpttrace-150m`.** It was `desklib` when this evaluation was run, and the text below is the recommendation as written then.
 
 If the default is to change, the evidence here points to **`gpttrace-150m`**: it is 11 times smaller than desklib (151 MB against 1.74 GB), 8 times faster per sentence on CPU, 4th on RAID against 42nd, has the fewest human passages over 0.5 in this run, and treats casual sentences the way the tool's documentation says the model should. A first-time user gets a result in seconds instead of after a 1.7 GB download. `gpttrace-1b` is the better detector and a sensible "accurate" option beside it.
 
 Three things to weigh before deciding:
 1. **Licence.** GPTTrace weights are CC BY-SA 4.0. Running them puts no condition on the user's text or on ai-detect's MIT code, and ai-detect does not redistribute them. Anyone who redistributes or adapts the weights takes on attribution and share-alike. If an all-MIT default matters, `conpara` is the strongest MIT model, at the cost of a 1.74 GB download and the sentencepiece dependency.
-2. **Dependency.** The GPTTrace models need onnxruntime, which today is the optional `[light]` extra. Making one the default means moving onnxruntime into the core dependencies.
+2. **Dependency.** The GPTTrace models need onnxruntime, which was the optional `[light]` extra. Making one the default means moving onnxruntime into the core dependencies. (Done 25 Nov 2026.)
 3. **Existing numbers.** `docs/detection-patterns.md` is written against desklib, and its headline pair does not reproduce today. Whichever default is chosen, that page's figures need re-measuring before they are quoted again.
 
 ## Not done, not verified

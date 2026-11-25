@@ -1,0 +1,267 @@
+{
+ "what": "What ai-detect reported for one web page on one day. A demonstration of the tool, not a finding about the page or whoever wrote it. No page text is kept here.",
+ "url": "https://theaiengineer.substack.com/p/how-deepseek-distilled-r1",
+ "date": "2026-11-25",
+ "device": "cpu",
+ "version": "2.0.0",
+ "default_model": "gpttrace-150m",
+ "single": {
+  "scan_id": "20261125-070914-1501a5",
+  "created": "2026-11-25T07:09:14",
+  "models": [
+   "gpttrace-150m"
+  ],
+  "words": 2064,
+  "sentences_scored": 151,
+  "passages": 17,
+  "assessment": {
+   "label": "Likely human",
+   "ai_pct": 6.3,
+   "confidence": "high",
+   "notes": [],
+   "breakdown": {
+    "ai": 2,
+    "uncertain": 8,
+    "human": 90
+   }
+  },
+  "document_ai_pct_raw_or_ensemble": 8.0,
+  "mean_sentence_pct_raw_or_ensemble": 61.5,
+  "sentences_over_half": 93,
+  "operating_point": {
+   "flagged_sentences": 11,
+   "flagged_passages": 3,
+   "calibrated_document_pct": 6.3,
+   "target_fpr": 0.05
+  },
+  "per_model": null,
+  "ensemble": null,
+  "structure_tells": [
+   {
+    "id": "stock_vocabulary",
+    "label": "Stock vocabulary",
+    "severity": "medium"
+   },
+   {
+    "id": "stock_vocabulary",
+    "label": "Stock vocabulary",
+    "severity": "medium"
+   },
+   {
+    "id": "stock_vocabulary",
+    "label": "Stock vocabulary",
+    "severity": "medium"
+   },
+   {
+    "id": "stock_vocabulary",
+    "label": "Stock vocabulary",
+    "severity": "medium"
+   },
+   {
+    "id": "title_case_heading",
+    "label": "Title Case Heading",
+    "severity": "low"
+   },
+   {
+    "id": "title_case_heading",
+    "label": "Title Case Heading",
+    "severity": "low"
+   },
+   {
+    "id": "title_case_heading",
+    "label": "Title Case Heading",
+    "severity": "low"
+   },
+   {
+    "id": "title_case_heading",
+    "label": "Title Case Heading",
+    "severity": "low"
+   },
+   {
+    "id": "title_case_heading",
+    "label": "Title Case Heading",
+    "severity": "low"
+   },
+   {
+    "id": "title_case_heading",
+    "label": "Title Case Heading",
+    "severity": "low"
+   },
+   {
+    "id": "title_case_heading",
+    "label": "Title Case Heading",
+    "severity": "low"
+   }
+  ],
+  "visual_tells": [],
+  "perplexity": null,
+  "page": {
+   "page": {
+    "width": 1366,
+    "height": 11476,
+    "viewport": [
+     1366,
+     900
+    ]
+   },
+   "clipped_at": null
+  }
+ },
+ "ensemble": {
+  "scan_id": "20261125-071029-21e43b",
+  "created": "2026-11-25T07:10:29",
+  "models": [
+   "gpttrace-150m",
+   "desklib",
+   "gpttrace-1b",
+   "tabularis",
+   "light"
+  ],
+  "words": 2064,
+  "sentences_scored": 151,
+  "passages": 17,
+  "assessment": {
+   "label": "Likely human",
+   "ai_pct": 13.7,
+   "confidence": "high",
+   "notes": [
+    "All 5 models agree."
+   ],
+   "breakdown": {
+    "ai": 0,
+    "uncertain": 7,
+    "human": 93
+   }
+  },
+  "document_ai_pct_raw_or_ensemble": 13.7,
+  "mean_sentence_pct_raw_or_ensemble": 23.2,
+  "sentences_over_half": 1,
+  "operating_point": {
+   "flagged_sentences": 1,
+   "flagged_passages": 1,
+   "calibrated_document_pct": 13.7,
+   "target_fpr": 0.05
+  },
+  "per_model": {
+   "gpttrace-150m": {
+    "model_ai_pct": 61.5,
+    "ai_count_raw": 93,
+    "document_ai_pct": 8.0,
+    "document_flag": false,
+    "flagged_sentences": 11
+   },
+   "desklib": {
+    "model_ai_pct": 51.7,
+    "ai_count_raw": 74,
+    "document_ai_pct": 4.6,
+    "document_flag": false,
+    "flagged_sentences": 3
+   },
+   "gpttrace-1b": {
+    "model_ai_pct": 66.4,
+    "ai_count_raw": 100,
+    "document_ai_pct": 89.5,
+    "document_flag": false,
+    "flagged_sentences": 21
+   },
+   "tabularis": {
+    "model_ai_pct": 61.0,
+    "ai_count_raw": 100,
+    "document_ai_pct": 0.8,
+    "document_flag": false,
+    "flagged_sentences": 9
+   },
+   "light": {
+    "model_ai_pct": 65.2,
+    "ai_count_raw": 109,
+    "document_ai_pct": 9.5,
+    "document_flag": false,
+    "flagged_sentences": 0
+   }
+  },
+  "ensemble": {
+   "method": "mean calibrated probability",
+   "n": 5,
+   "document_agreement": 0,
+   "note": "ai_prob is the mean of each model's calibrated probability. 'scores' holds each model's raw probability; 'flags' says which models are over their own threshold."
+  },
+  "structure_tells": [
+   {
+    "id": "stock_vocabulary",
+    "label": "Stock vocabulary",
+    "severity": "medium"
+   },
+   {
+    "id": "stock_vocabulary",
+    "label": "Stock vocabulary",
+    "severity": "medium"
+   },
+   {
+    "id": "stock_vocabulary",
+    "label": "Stock vocabulary",
+    "severity": "medium"
+   },
+   {
+    "id": "stock_vocabulary",
+    "label": "Stock vocabulary",
+    "severity": "medium"
+   },
+   {
+    "id": "title_case_heading",
+    "label": "Title Case Heading",
+    "severity": "low"
+   },
+   {
+    "id": "title_case_heading",
+    "label": "Title Case Heading",
+    "severity": "low"
+   },
+   {
+    "id": "title_case_heading",
+    "label": "Title Case Heading",
+    "severity": "low"
+   },
+   {
+    "id": "title_case_heading",
+    "label": "Title Case Heading",
+    "severity": "low"
+   },
+   {
+    "id": "title_case_heading",
+    "label": "Title Case Heading",
+    "severity": "low"
+   },
+   {
+    "id": "title_case_heading",
+    "label": "Title Case Heading",
+    "severity": "low"
+   },
+   {
+    "id": "title_case_heading",
+    "label": "Title Case Heading",
+    "severity": "low"
+   }
+  ],
+  "visual_tells": [],
+  "perplexity": {
+   "model": "openai-community/gpt2",
+   "document": 238.0,
+   "mean": 352.6,
+   "burstiness": 320.9,
+   "burstiness_cv": 0.91,
+   "sentences_scored": 151,
+   "note": "GPT-2 perplexity: how predictable each sentence is to a small 2019 language model. Lower is more predictable. Burstiness is the spread across sentences. A readout, not a verdict."
+  },
+  "page": {
+   "page": {
+    "width": 1366,
+    "height": 11476,
+    "viewport": [
+     1366,
+     900
+    ]
+   },
+   "clipped_at": null
+  }
+ }
+}

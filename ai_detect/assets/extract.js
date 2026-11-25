@@ -19,6 +19,9 @@
     const cs = getComputedStyle(el);
     if (cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) === 0) return false;
     if (el.getAttribute('aria-hidden') === 'true' || el.hidden) return false;
+    // A display:contents wrapper has no box of its own (its rectangle is empty)
+    // but its children are laid out and visible.
+    if (cs.display === 'contents') return true;
     const r = el.getBoundingClientRect();
     return r.width > 1 && r.height > 1;
   };

@@ -3,6 +3,8 @@
 Found on 25 Nov 2026: a Substack post is ``<article class="typography
 newsletter-post post">``. "newsletter" is in the extractor's noise list, so the
 whole article was skipped and the scan ended with "No readable article text".
+The article also sits inside a ``display: contents`` wrapper, which has an
+empty rectangle and was taken for an invisible element.
 """
 
 import os

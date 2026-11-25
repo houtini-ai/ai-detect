@@ -142,7 +142,7 @@ def screenshots_section():
     captions = {
         "scan-form": "The scan form with the URL tab and the model picker",
         "result-single-model": "Result of a single-model scan (the default, gpttrace-150m): verdict, highlighted text, sentence detail",
-        "result-ensemble": "Result of a five-model ensemble scan: the models disagree, so the verdict is Uncertain",
+        "result-ensemble": "Result of a five-model ensemble scan of the same page: the verdict, the text shaded by the combined calibrated score, and five models' scores for one sentence",
         "ensemble-sentences-table": "Sentence table with one calibrated column per model, agreement dots and the combined score",
         "tells-panel": "Structure and style tells; the selected tell is highlighted in the text",
         "rewrite-panel": "Rewrite view: flagged sentences with their suggestions",

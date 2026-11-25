@@ -18,7 +18,7 @@ cd ai-detect
 pip install .                 # core: torch, transformers, onnxruntime, mcp, starlette, uvicorn
                               # enough for the default model (gpttrace-150m) and four of the other five
 pip install ".[web]"          # + playwright: URL input and .html files
-playwright install chromium   # once, after the [web] extra
+playwright install chromium   # once, after the [web] extra (Linux: see section 8)
 pip install ".[conpara]"      # + sentencepiece, protobuf: the conpara model
 pip install ".[all]"          # everything above
 ```
@@ -134,7 +134,19 @@ Claude Desktop (`claude_desktop_config.json`), when `ai-detect-mcp` is on PATH:
 }
 ```
 
-Without it on PATH:
+Without it on PATH, give the full path to the command inside the virtual environment. In JSON every backslash of a Windows path is doubled. This form was run on Windows 11 on 25 Nov 2026 (the config was parsed as JSON and the parsed command completed an MCP handshake and a scan; `docs/proofs/windows-venv-2026-11-25.md`):
+
+```json
+{
+  "mcpServers": {
+    "ai-detect": {
+      "command": "C:\\Users\\<user>\\ai-detect-proof\\ai-detect\\.venv\\Scripts\\ai-detect-mcp.exe"
+    }
+  }
+}
+```
+
+Or through Python:
 
 ```json
 {
@@ -154,7 +166,7 @@ Claude Code:
 claude mcp add ai-detect -- ai-detect-mcp
 ```
 
-After an npm release (not made yet) the command would be `npx -y @houtini/ai-detect` with `"args": ["-y", "--package", "@houtini/ai-detect", "ai-detect-mcp"]`; this form was exercised from a locally packed tarball only. The `python -m` form is the one the automated tests use. The Claude Desktop and Claude Code snippets follow those clients' standard format; they were not loaded into either client during this work.
+After an npm release (not made yet) the command would be `npx -y @houtini/ai-detect` with `"args": ["-y", "--package", "@houtini/ai-detect", "ai-detect-mcp"]`; this form was exercised from a locally packed tarball only. The `python -m` form is the one the automated tests use. The Claude Desktop and Claude Code snippets follow those clients' standard format; they were not loaded into either client during this work: the full-path form was started the way a client starts it (the command alone, no shell, virtual environment not activated), by `scripts/smoke_mcp.mjs`.
 
 ## 5. Web UI
 
@@ -212,7 +224,7 @@ At most 12 instances of one tell are listed; the summary counts all. The rules a
 
 ## 8. URL fetching
 
-One page per call, through Playwright's Chromium with a current desktop Chrome user agent and JavaScript rendered. It follows that URL's own redirects and loads its sub-resources. It does not crawl, click, type, submit forms or sign in; downloads are refused; dialogs are dismissed; a page cannot open a second window. Default timeout 30 seconds: one deadline, started when the browser is up, covers navigation, settling, scrolling, extraction and the screenshot together. The article is taken from `<article>`/`<main>` or the container with the most paragraph text; navigation, headers, footers, sidebars, cookie banners, author boxes and code blocks are dropped; headings, paragraphs, lists, bold lead-ins, tables and captions are kept. A full-page JPEG is saved (clipped at 16,000 px). Without Playwright the error message gives the two install commands.
+One page per call, through Playwright's Chromium with a current desktop Chrome user agent and JavaScript rendered. It follows that URL's own redirects and loads its sub-resources. It does not crawl, click, type, submit forms or sign in; downloads are refused; dialogs are dismissed; a page cannot open a second window. Default timeout 30 seconds: one deadline, started when the browser is up, covers navigation, settling, scrolling, extraction and the screenshot together. The article is taken from `<article>`/`<main>` or the container with the most paragraph text; navigation, headers, footers, sidebars, cookie banners, author boxes and code blocks are dropped; headings, paragraphs, lists, bold lead-ins, tables and captions are kept. A full-page JPEG is saved (clipped at 16,000 px). Without Playwright the error message gives the two install commands. When Playwright is installed but its driver or Chromium cannot start, the message adds the Debian/Ubuntu commands (`apt-get install -y libatomic1`, `playwright install --with-deps chromium`) and the underlying error line. On `debian:12`, `debian:12-slim` and `ubuntu:24.04` images all three steps were needed (25 Nov 2026, Playwright 1.65.2): `docs/proofs/linux-venv-2026-11-25.md`.
 
 **Public addresses only.** A URL is refused, before a browser starts, when its host is or resolves to an address that is not on the public internet:
 

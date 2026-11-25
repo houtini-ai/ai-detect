@@ -229,6 +229,19 @@ def test_batch_csv_has_the_calibrated_column(fake_models):
     assert value == str(row["calibrated_document_pct"])
 
 
+def test_html_export_shows_the_calibrated_score_and_labels_the_raw_one(fake_models):
+    from ai_detect import report as exports
+    report = _report(AI_TEXT, fake_models, ai=1.2)
+    page = exports.to_html(report)
+    assert f"Document score: <b>{report['assessment']['ai_pct']}%</b>" in page
+    assert "Document score, raw" in page and f"<b>{report['document_ai_pct']}%</b>" in page
+    fake_models()
+    both = analyze.analyze(AI_TEXT, models=["gpttrace-150m", "light"])
+    page = exports.to_html(both)
+    assert f"Document score: <b>{both['assessment']['ai_pct']}%</b>" in page
+    assert "Document score, raw" not in page
+
+
 def test_cli_prints_the_assessment_and_labels_raw_figures(monkeypatch, capsys, fake_models):
     from ai_detect import cli
     fake_models(ai=1.2)

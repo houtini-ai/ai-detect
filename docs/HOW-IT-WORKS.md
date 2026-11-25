@@ -41,7 +41,7 @@ The article says its own models are built to ignore punctuation such as em dashe
 
 ![A schematic of the result page with six numbered parts](diagrams/result-anatomy.svg)
 
-(`diagrams/result-anatomy.svg`, PNG copy alongside. Real screenshots are in `screenshots/`; `screenshots/result-ensemble-light.png` is the same screen.)
+(`diagrams/result-anatomy.svg`, PNG copy alongside. Real screenshots are in `screenshots/`; `screenshots/result-ensemble-light.png` is the same screen. The figures in the schematic are illustrative; they are not from a scan.)
 
 The order is deliberate: the verdict and how far to trust it come first, the evidence second.
 
@@ -52,7 +52,7 @@ The order is deliberate: the verdict and how far to trust it come first, the evi
 
 ## Why an ensemble, and what it does not do
 
-Each model has blind spots, and they are not the same ones. Run together they show where they agree. In the evaluation no combination was more accurate than the best single model. The ensemble's value is that disagreement is visible: on the worked example one model alone said "Likely AI" and five together said "Uncertain".
+Each model has blind spots, and they are not the same ones. Run together they show where they agree. In the evaluation no combination was more accurate than the best single model. The ensemble's value is that disagreement is visible: on the worked example (a web page scanned on 25 Nov 2026) the five models' raw document scores ran from 0.8% to 89.5%, and none of the five was over its own operating point.
 
 ## Where the work happens
 

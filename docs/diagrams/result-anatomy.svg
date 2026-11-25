@@ -10,7 +10,7 @@
   <rect class="fr" x="24" y="24" width="640" height="552" rx="8"/>
   <!-- verdict strip -->
   <text class="k" x="48" y="62">TITLE · SOURCE</text><text class="s" x="48" y="98">Uncertain</text>
-  <text class="k" x="270" y="72">DOCUMENT SCORE</text><text class="n" x="270" y="98">51.9%</text>
+  <text class="k" x="270" y="72">DOCUMENT SCORE</text><text class="n" x="270" y="98">54%</text>
   <text class="k" x="400" y="72">CONFIDENCE</text><text class="n" x="400" y="98">low</text>
   <rect x="500" y="84" width="60" height="8" fill="#e0a43a"/><rect x="560" y="84" width="80" height="8" fill="#0f7a5a"/>
   <line class="rule" x1="48" y1="120" x2="640" y2="120"/>
@@ -30,7 +30,7 @@
   <text class="p" x="436" y="196" style="font-weight:700;fill:#18181b">Sentence</text><text class="p" x="500" y="196">Tells</text><text class="p" x="540" y="196">Rewrite</text><text class="p" x="592" y="196">Models</text>
   <line x1="436" y1="204" x2="490" y2="204" stroke="#0f7a5a" stroke-width="2"/>
   <text class="k" x="436" y="234">MODEL SCORES</text>
-  <g class="p"><text x="436" y="256">gpttrace-1b</text><text x="600" y="256">62%</text><text x="436" y="276">conpara</text><text x="600" y="276">48%</text><text x="436" y="296">desklib</text><text x="600" y="296">55%</text><text x="436" y="316">agreement</text><text x="592" y="316">2 of 3</text></g>
+  <g class="p"><text x="436" y="256">gpttrace-150m</text><text x="600" y="256">55%</text><text x="436" y="276">gpttrace-1b</text><text x="600" y="276">62%</text><text x="436" y="296">conpara</text><text x="600" y="296">48%</text><text x="436" y="316">agreement</text><text x="592" y="316">2 of 3</text></g>
   <text class="k" x="436" y="350">WHY</text><rect x="436" y="362" width="200" height="10" class="t"/><rect x="436" y="380" width="160" height="10" class="t"/>
   <text class="k" x="436" y="420">REWRITE</text><rect x="436" y="432" width="200" height="10" class="t"/><rect x="436" y="450" width="120" height="10" class="t"/>
   <!-- callouts -->
