@@ -285,7 +285,7 @@ Limits: the check and the browser each resolve the name, so a DNS answer that ch
 
 ### Compared with GPTZero
 
-Sources: https://gptzero.me/technology and https://gptzero.me/news/how-ai-detectors-work, both read 24 Nov 2026 (public pages only; no account, nothing submitted). GPTZero is a hosted product with a trained, benchmarked model; ai-detect runs other people's open models locally. The table is about features, not accuracy. On RAID's default view GPTZero is 26th of 61 (0.9724) and the best model here, GPTTrace-1B, is 2nd (0.9993), same source and date as the model table; ai-detect ships a 4-bit export of that model, not the ranked file.
+Sources: https://gptzero.me/technology and https://gptzero.me/news/how-ai-detectors-work, both read 24 Nov 2026 (public pages only; no account, nothing submitted). GPTZero is a hosted product with a trained, benchmarked model; ai-detect runs other people's open models locally. The table is about features, not accuracy. On RAID's all-attacks view GPTZero is 26th of 61 (0.9724) and the best model here, GPTTrace-1B, is 2nd (0.9993), same source and date as the model table; ai-detect ships a 4-bit export of that model, not the ranked file.
 
 | Capability | GPTZero (per its pages) | ai-detect 2.0.1 | |
 |---|---|---|---|

@@ -15,6 +15,10 @@ A patch to 2.0.0. No change to the models, the scores, the CLI flags or the MCP 
 
 ### Tests
 - Browser tests that measure bounding boxes: the Sentences table against the side panel from 1100 to 1920 px, with one model and with five models plus perplexity; the other views, side tabs and pages at 1440 px.
+- The Models page, the README and the docs called the RAID ranking they use "the leaderboard's default view". It is the all-attacks view; the leaderboard opens on its no-attack view, where the ranks differ. The ranks and scores are unchanged, only the description.
+
+### Added
+- `uv.lock`, so `uv` installs the same dependency versions each time (suggested in #1).
 
 ## [2.0.0] - 2026-11-25
 

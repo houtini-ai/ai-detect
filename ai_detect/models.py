@@ -7,8 +7,9 @@ Sources for every row, all read 24 Nov 2026:
   model card at ``https://huggingface.co/<repo>``.
 * RAID rank: every ``leaderboard/submissions/*/results.json`` in
   https://github.com/liamdugan/raid at commit 84c2ea4 (16 Nov 2026), ranked on
-  ``score_agg.all.accuracy["0.05"]`` (TPR at 5% FPR, all attacks, the
-  leaderboard's default view). 61 submissions carry that score.
+  ``score_agg.all.accuracy["0.05"]`` (TPR at 5% FPR, all attacks; the
+  leaderboard itself opens on the no-attack view, where ranks differ).
+  61 submissions carry that score.
 
 A RAID rank describes the checkpoint its authors submitted, scored on whole
 documents. It says nothing certain about a quantised export of that checkpoint

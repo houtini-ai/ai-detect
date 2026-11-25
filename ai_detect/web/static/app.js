@@ -367,7 +367,7 @@ async function historyPage() {
 async function modelsPage() {
   const draw = () => {
     main.innerHTML = `<section class="page"><h1>Models</h1>
-      <p class="lede">Weights download from Hugging Face on first use and are cached on this machine. RAID ranks are the leaderboard's default view, read on the date shown. They describe whole documents, not single sentences.</p>
+      <p class="lede">Weights download from Hugging Face on first use and are cached on this machine. RAID ranks are from the leaderboard's all-attacks view, read on the date shown. They describe whole documents, not single sentences.</p>
       <table><thead><tr><th>Model</th><th class="num">Size</th><th>Licence</th><th>RAID</th><th>Runs on</th><th>Status</th><th></th></tr></thead><tbody>
       ${STATE.models.map((m) => `<tr><td><b style="color:var(--text)">${esc(m.id)}</b>${m.id === STATE.default_model ? ' <span class="hint">default</span>' : ''}<div>${esc(m.label)}</div><div class="hint">${esc(m.summary)} <a href="${esc(m.card)}" target="_blank" rel="noreferrer">model card</a></div>${m.caveats.map((c) => `<div class="hint">${esc(c)}</div>`).join('')}</td>
         <td class="num">${size(m.approx_mb)}</td><td>${esc(m.licence)}</td>

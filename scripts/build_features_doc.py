@@ -126,7 +126,7 @@ def models_section():
         default = " **default**" if mid == DEFAULT_MODEL else ""
         out.append(f"| `{mid}`{alias}{default} | [{s.label}]({s.card}) | {s.approx_mb} MB | {s.licence} | "
                    f"{raid} | {needs} | `--model {mid}` |")
-    out += ["", "RAID rank: TPR at 5% FPR with all attacks, the leaderboard's default view, computed "
+    out += ["", "RAID rank: TPR at 5% FPR with all attacks (the leaderboard opens on its no-attack view, where ranks differ), computed "
             "from every `results.json` in https://github.com/liamdugan/raid at commit 84c2ea4 and "
             "matching https://raid-bench.xyz/leaderboard, read 24 Nov 2026. Per-model source links "
             "are in `ai-detect models --json` (`raid.source`). Notes on each rank:", ""]

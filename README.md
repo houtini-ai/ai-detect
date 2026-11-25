@@ -498,7 +498,7 @@ There are six. The default is `gpttrace-150m`.
 
 Select one with `--model <id>`.
 
-The RAID rank is the leaderboard's default view (TPR at 5% FPR, all attacks), read on 24 Nov 2026 at https://raid-bench.xyz/leaderboard. It's a rank for whole documents. Two of the ranks are for a different file from the one ai-detect runs: `light` and `gpttrace-1b` are ranked on their full-precision weights and run here as quantised ONNX exports. The `gpttrace-150m` card says its int8 file scores slightly below the PyTorch weights. `desklib` was first on RAID when it was submitted in February 2025.
+The RAID rank is from the leaderboard's all-attacks view (TPR at 5% FPR), read on 24 Nov 2026 at https://raid-bench.xyz/leaderboard. It's a rank for whole documents. Two of the ranks are for a different file from the one ai-detect runs: `light` and `gpttrace-1b` are ranked on their full-precision weights and run here as quantised ONNX exports. The `gpttrace-150m` card says its int8 file scores slightly below the PyTorch weights. `desklib` was first on RAID when it was submitted in February 2025.
 
 The speed column is from my own evaluation, on one Windows 11 machine, on CPU.
 

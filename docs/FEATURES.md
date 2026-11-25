@@ -645,7 +645,7 @@ History is stored as JSON (plus a JPEG for URL scans) in `~/.ai-detect/history`,
 | `tabularis` (modernbert) | [Tabularis ModernBERT R1.1](https://huggingface.co/tabularisai/ai-text-detection) | 598 MB | MIT | 21 of 61 (0.9898) | core install | `--model tabularis` |
 | `conpara` | [DeBERTa-ConPara (DeBERTa-v3-large)](https://huggingface.co/SES-Lab-OTH/deberta-conpara) | 1738 MB | MIT | 20 of 61 (0.9901) | `[conpara]` extra (sentencepiece) | `--model conpara` |
 
-RAID rank: TPR at 5% FPR with all attacks, the leaderboard's default view, computed from every `results.json` in https://github.com/liamdugan/raid at commit 84c2ea4 and matching https://raid-bench.xyz/leaderboard, read 24 Nov 2026. Per-model source links are in `ai-detect models --json` (`raid.source`). Notes on each rank:
+RAID rank: TPR at 5% FPR with all attacks (the leaderboard opens on its no-attack view, where ranks differ), computed from every `results.json` in https://github.com/liamdugan/raid at commit 84c2ea4 and matching https://raid-bench.xyz/leaderboard, read 24 Nov 2026. Per-model source links are in `ai-detect models --json` (`raid.source`). Notes on each rank:
 
 - `desklib`: First on RAID when submitted, 16 Feb 2025.
 - `light`: Rank is for the fp32 weights at Oxidane/tmr-ai-text-detector; ai-detect runs the int8 ONNX export.
@@ -738,7 +738,7 @@ Limits: the check and the browser each resolve the name, so a DNS answer that ch
 
 ### Compared with GPTZero
 
-Sources: https://gptzero.me/technology and https://gptzero.me/news/how-ai-detectors-work, both read 24 Nov 2026 (public pages only; no account, nothing submitted). GPTZero is a hosted product with a trained, benchmarked model; ai-detect runs other people's open models locally. The table is about features, not accuracy. On RAID's default view GPTZero is 26th of 61 (0.9724) and the best model here, GPTTrace-1B, is 2nd (0.9993), same source and date as the model table; ai-detect ships a 4-bit export of that model, not the ranked file.
+Sources: https://gptzero.me/technology and https://gptzero.me/news/how-ai-detectors-work, both read 24 Nov 2026 (public pages only; no account, nothing submitted). GPTZero is a hosted product with a trained, benchmarked model; ai-detect runs other people's open models locally. The table is about features, not accuracy. On RAID's all-attacks view GPTZero is 26th of 61 (0.9724) and the best model here, GPTTrace-1B, is 2nd (0.9993), same source and date as the model table; ai-detect ships a 4-bit export of that model, not the ranked file.
 
 | Capability | GPTZero (per its pages) | ai-detect 2.0.1 | |
 |---|---|---|---|

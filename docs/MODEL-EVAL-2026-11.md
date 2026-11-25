@@ -46,7 +46,7 @@ How to read it. AUROC is the chance a random AI item outscores a random human on
 
 ## Model by model
 
-Sources for licence, size and rank: the model card and the Hugging Face API for each repo; RAID rank from every `leaderboard/submissions/*/results.json` in https://github.com/liamdugan/raid at commit 84c2ea4 (16 Nov 2026), ranked on TPR at 5% FPR with all attacks, the leaderboard's default view (https://raid-bench.xyz/leaderboard). 61 submissions carry that score. All read 24 Nov 2026. A RAID rank is for whole documents.
+Sources for licence, size and rank: the model card and the Hugging Face API for each repo; RAID rank from every `leaderboard/submissions/*/results.json` in https://github.com/liamdugan/raid at commit 84c2ea4 (16 Nov 2026), ranked on TPR at 5% FPR with all attacks (the leaderboard opens on its no-attack view, where ranks differ) (https://raid-bench.xyz/leaderboard). 61 submissions carry that score. All read 24 Nov 2026. A RAID rank is for whole documents.
 
 ### desklib (the default until 25 Nov 2026)
 - **What it is.** desklib/ai-text-detector-v1.01, DeBERTa-v3-large, 434M parameters, 1.74 GB, MIT. https://huggingface.co/desklib/ai-text-detector-v1.01

@@ -6,8 +6,8 @@
  "version": "2.0.1",
  "default_model": "gpttrace-150m",
  "single": {
-  "scan_id": "20261125-093056-9a2861",
-  "created": "2026-11-25T09:30:56",
+  "scan_id": "20261125-102422-c69399",
+  "created": "2026-11-25T10:24:22",
   "models": [
    "gpttrace-150m"
   ],
@@ -108,8 +108,8 @@
   }
  },
  "ensemble": {
-  "scan_id": "20261125-093205-e8e806",
-  "created": "2026-11-25T09:32:05",
+  "scan_id": "20261125-102525-7bedfc",
+  "created": "2026-11-25T10:25:25",
   "models": [
    "gpttrace-150m",
    "desklib",
