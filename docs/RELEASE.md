@@ -14,33 +14,24 @@ A checklist for PowerShell on Windows. Nothing below has been published: no push
 ```powershell
 python -m pip install pytest pyflakes
 ```
-(While preparing this, the pre-flight was run with the virtual environment in `C:\MCP\ai-detect-rebuild\.venv`, which has both.)
 
 **Blockers and decisions**
 - None found by the harness: tests pass, no secrets in the branch history, the tarball holds only whitelisted files.
-- The README is still the 1.0.0 text with factual corrections only. It ships inside the npm tarball. Publish after the rewrite, or accept that.
-- The code is on a local branch in a second working folder, `C:\MCP\ai-detect-rebuild` (a git worktree of `C:\MCP\ai-detect`). Your installed `ai-detect` still runs the old code in `C:\MCP\ai-detect`.
+- The README was rewritten for 2.0.0. It ships inside the npm tarball.
+- `main` on GitHub holds 2.0.0, including the commits of 25 Nov 2026. `C:\MCP\ai-detect` is the only working folder, and your installed `ai-detect` runs from it.
 - The npm package does **not** need a PyPI release: it carries the Python source and runs it with `uv`. PyPI is optional and comes last.
-- The default model is unchanged (`desklib`). Changing it is a separate decision and a separate release.
+- The default model is `gpttrace-150m`. It was changed from `desklib` on 25 Nov 2026, inside 2.0.0.
 
 **Pre-flight (runs everything, publishes nothing)** [dry-run OK]
 ```powershell
-cd C:\MCP\ai-detect-rebuild
+cd C:\MCP\ai-detect
 python scripts\release_check.py
 ```
 Success: the last line is `RELEASE CHECK PASSED (nothing was published)`. Takes about three minutes.
 
 ## Steps, in order
 
-**1. Review and merge the branch** [not verified: no push was made]
-```powershell
-cd C:\MCP\ai-detect-rebuild
-git log --oneline main..rebuild-2026-11
-git push -u origin rebuild-2026-11
-gh pr create --base main --head rebuild-2026-11 --title "ai-detect 2.0.0" --body "See CHANGELOG.md"
-```
-Merge the PR on GitHub when reviewed. Success: `gh pr view --json state` shows `MERGED`.
-Undo: before merging, `git push origin --delete rebuild-2026-11`. After merging, revert the merge commit.
+**1. Merge** [done on 25 Nov 2026: `rebuild-2026-11` was fast-forwarded into `main` and pushed. Nothing to run.]
 
 **2. Tag** [not verified]
 ```powershell
@@ -108,7 +99,7 @@ Run these on a machine (or user account) that has never had ai-detect. All [not 
 
 **What the pre-flight checks.** `scripts/release_check.py`, in order: (1) the version is identical in `ai_detect/_version.py`, `package.json`, `manifest.json`, `server.json` and the newest `CHANGELOG.md` entry; (2) `compileall`, `pyflakes`, `node --check`; (3) the Python tests, browser tests excluded; (4) a scan of every commit on the branch and the working tree for credential-shaped strings (Hugging Face, OpenAI-style, GitHub, npm, AWS, PyPI, Slack tokens, private keys, quoted password assignments); (5) `npm pack --dry-run`: every file must match the whitelist, none may match the forbidden list (tests, docs, scripts, examples, caches, weights, images, `.env`, logs), none may contain a local user path or a credential-shaped string; (6) pack, `npm install` the tarball into an empty temp folder, start the MCP server from it, complete `initialize` and `tools/list`, and run one scan with the smallest model.
 
-**Recorded output, 24 Nov 2026, Windows host**
+**Recorded output, 24 Nov 2026, Windows host** (the test count has grown since: 255 passed on 25 Nov 2026)
 ```
 == versions
   2.0.0      ai_detect/_version.py
@@ -148,15 +139,15 @@ tools/list ok: 9 tools: compare_texts, detect_ai_file, detect_ai_text, detect_ai
 scan ok: model light, sentence score 96.6%, document 97.9%, sentences 2
 SMOKE PASS
 ```
-In that container `uv` resolved MCP SDK 2.x, so this run also covers the newer SDK. The container sets `UV_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu` to get CPU-only PyTorch; without it the default Linux wheel pulls several GB of CUDA libraries (not tested). The image was removed afterwards. To repeat:
+In that container `uv` resolved MCP SDK 2.x, so this run also covers the newer SDK. The container sets `UV_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu` to get CPU-only PyTorch; without it the default Linux wheel pulls about 3 GB of CUDA libraries (tested 25 Nov 2026: a 5.7 GB virtual environment, 3.0 GB of it `nvidia-*`). The image was removed afterwards. To repeat:
 ```powershell
-cd C:\MCP\ai-detect-rebuild
+cd C:\MCP\ai-detect
 $ctx = "$env:TEMP\aid-ctx"; New-Item -ItemType Directory -Force $ctx | Out-Null
 npm pack --ignore-scripts --pack-destination $ctx; Copy-Item scripts\smoke_mcp.mjs $ctx
 docker build -t ai-detect-smoke -f scripts\docker-smoke\Dockerfile $ctx; docker run --rm ai-detect-smoke
 ```
 
-**The npm launcher.** `bin/launch.js` runs `uv tool run --from <package folder>[light] ai-detect-mcp` (or `ai-detect`). The package folder of a global install has an `@houtini` segment and, on Windows, often a space (`C:\Users\First Last\AppData\Roaming\npm\node_modules\@houtini\ai-detect`); uv 0.9.14 accepts that form as it is (checked 24 Nov 2026 on Windows: `--help` and the MCP smoke test both passed from such a path), and the smoke step of `scripts/release_check.py` now installs into a folder with a space so the case is re-checked before every publish. It needs `uv` on PATH and nothing else: `uv` supplies Python and installs the dependencies into its own cache. Without `uv` it prints install instructions and exits 1. First start: about a minute on Windows (measured 67 s; 2 s once cached). Names checked on 24 Nov 2026: `@houtini/ai-detect` and `ai-detect` on npm and `ai-detect` on PyPI all returned 404, so all are free.
+**The npm launcher.** `bin/launch.js` runs `uv tool run --from <package folder> ai-detect-mcp` (or `ai-detect`), and adds extras only when `AI_DETECT_EXTRAS` is set. The package folder of a global install has an `@houtini` segment and, on Windows, often a space (`C:\Users\First Last\AppData\Roaming\npm\node_modules\@houtini\ai-detect`); uv 0.9.14 accepts that form as it is (checked 24 Nov 2026 on Windows: `--help` and the MCP smoke test both passed from such a path), and the smoke step of `scripts/release_check.py` now installs into a folder with a space so the case is re-checked before every publish. It needs `uv` on PATH and nothing else: `uv` supplies Python and installs the dependencies into its own cache. Without `uv` it prints install instructions and exits 1. First start: about a minute on Windows (measured 67 s; 2 s once cached). Names checked on 24 Nov 2026: `@houtini/ai-detect` and `ai-detect` on npm and `ai-detect` on PyPI all returned 404, so all are free.
 
 **The MCPB bundle.** Manifest version 0.4, server type `uv`: the host runs `uv run --directory <bundle> --extra light mcpb_entry.py` and uv installs the dependencies from `pyproject.toml`. A bundle with PyTorch packed inside is not practical (per-platform, over a gigabyte), which is why the `uv` type is used. `mcpb validate` and `mcpb pack` passed (250 kB, 40 files); the packed file was unzipped and that exact command completed the MCP smoke test. It was **not** installed in Claude Desktop, and whether a given Claude Desktop build supports the `uv` server type was not checked. A copy is in `dist/` (git-ignored).
 

@@ -1,6 +1,6 @@
 # Model evaluation, November 2026
 
-Everything here was run on 24 Nov 2026 on one Windows 11 machine (Python 3.13.2, torch 2.10.0, transformers 5.4.0, onnxruntime 1.23.2), or was read at the source named beside it on that date. Nothing is from memory.
+Everything here except the worked example (25 Nov 2026, and its section says so) was run on 24 Nov 2026 on one Windows 11 machine (Python 3.13.2, torch 2.10.0, transformers 5.4.0, onnxruntime 1.23.2), or was read at the source named beside it on that date. Nothing is from memory.
 
 **All runs were on CPU.** Both GPUs were held by another workload (27 GB and 46 GB of 49 GB in use per `nvidia-smi`), so no model was run on CUDA. GPU speed and the CUDA code path are not measured in this document. The CUDA path for `desklib` is unchanged from 1.0.0; for `tabularis` and `conpara` it is the same torch device handling and is untested; the ONNX models use the CPU provider unless a GPU provider is installed.
 

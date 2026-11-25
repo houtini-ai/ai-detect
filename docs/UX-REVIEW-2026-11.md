@@ -1,6 +1,6 @@
 # Dashboard UX review, November 2026
 
-The web UI (`ai_detect/web/static/`) checked against ordinary interface practice on 24 Nov 2026, what was changed because of it, and what is still wrong. "Tested" means one of the 29 browser tests in `tests/ui/test_dashboard.py` exercises it.
+The web UI (`ai_detect/web/static/`) checked against ordinary interface practice on 24 Nov 2026, what was changed because of it, and what is still wrong. "Tested" means one of the 44 browser tests in `tests/ui/` (three files) exercises it.
 
 Design source: the Houtini site theme (`src/styles/global.css` and `docs/design.md` in the site repo, read only). Taken from it: zinc grounds, one accent per theme (emerald in light, violet in dark), hairline rules in place of shadows and cards, measured numbers in a monospace face, a serif for the text being read. No web font is loaded, because the page makes no external request; the named faces are used if installed and system faces otherwise. The layout idea of "verdict first, highlighted text, details at the side" is common to detector products; the wording, palette, type and components here are our own.
 

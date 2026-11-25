@@ -7,7 +7,7 @@ The eight structural patterns below are what actually move an AI detector, ranke
 The finding underneath all of it: **detectors have learned what clean, balanced, professional prose looks like, because that's what AI writes.** Formality is the tell, not vocabulary. There's no word list to avoid.
 
 **Tested:** 70+ paired sentence variations, February 2026
-**Model:** desklib/ai-text-detector-v1.01 (DeBERTa-v3-large, 434M parameters, first on RAID when submitted in February 2025)
+**Model:** desklib/ai-text-detector-v1.01 (DeBERTa-v3-large, 434M parameters, first on RAID when submitted in February 2025). It is no longer ai-detect's default: since 25 Nov 2026 that is `gpttrace-150m`
 **Previous model:** dejanseo/ai-cop (DeBERTa-v3-small fine-tune) — replaced 2026-02-16
 **Tool:** `ai-detect` (see the [README](../README.md)) — run any of these yourself
 
