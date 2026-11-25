@@ -148,7 +148,6 @@ def screenshots_section():
         "rewrite-panel": "Rewrite view: flagged sentences with their suggestions",
         "models-panel": "Models tab: each model's facts and its view of the document",
         "signals-perplexity": "Signals tab: sentence-length variation, GPT-2 perplexity and burstiness, passages",
-        "page-view-annotated": "Page view: the fetched page's screenshot with the selected tell's region outlined",
         "compare": "Before/after compare (the two bundled example files)",
         "models": "Models page: size, licence, RAID rank with source, download state",
         "history": "History page",

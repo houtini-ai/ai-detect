@@ -225,8 +225,6 @@ There are three views of the document:
 
 ![The Sentences view in the dark theme: a table with one calibrated column per model, agreement dots and the combined score](docs/screenshots/ensemble-sentences-table-dark.png)
 
-![The Page view: the fetched page's screenshot with the selected tell's region outlined](docs/screenshots/page-view-annotated-light.png)
-
 And five tabs in the side panel:
 
 | Tab | Shows |
@@ -603,8 +601,6 @@ The pattern layer is rule-based. It explains a flagged sentence in plain terms a
 
 Each finding has the matched text, a suggestion and character offsets. The report also carries a sentence-length metric (mean, standard deviation and coefficient of variation), which is the `SDSL` line in the CLI output.
 
-[`docs/detection-patterns.md`](docs/detection-patterns.md) has a longer write-up from 1.0.0. Don't quote its percentages. They were measured with `desklib`, its headline pair didn't reproduce on 24 Nov 2026, and the page carries a notice saying so.
-
 ## Structure and style tells
 
 These are page-level habits of machine-written copy. They're reported next to the model scores and never mixed into them. There are 24 checks, and each hit comes with its location, an example quoted from the text, a suggestion and a severity.
@@ -768,7 +764,7 @@ python scripts/release_check.py
 
 - The 255 tests need no model and no network, except `tests/test_mcp_stdio.py`, which runs the real MCP server with the `light` model and is skipped if that model isn't downloaded.
 - The 44 browser tests cover every dashboard control and error path, with a fake backend and a simulated download. They're skipped without Playwright.
-- `scripts/release_check.py` checks versions, lint and tests, scans the branch history for secrets, checks the npm tarball, and runs an install-and-scan smoke test. The release steps are in [`docs/RELEASE.md`](docs/RELEASE.md).
+- `scripts/release_check.py` checks versions, lint and tests, scans the branch history for secrets, checks the npm tarball, and runs an install-and-scan smoke test.
 
 Where things live:
 

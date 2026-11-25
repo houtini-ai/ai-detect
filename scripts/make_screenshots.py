@@ -206,16 +206,6 @@ def capture(url):
             page.click('.side [data-p="rewrite"]'); shot("rewrite-panel")
             page.click('.side [data-p="models"]'); shot("models-panel")
             page.click('.side [data-p="signals"]'); shot("signals-perplexity")
-            if page.locator('#view button[data-v="page"]').count():
-                page.click('#view button[data-v="page"]')
-                page.wait_for_function("() => { const i = document.querySelector('#shot img'); return i && i.complete; }")
-                page.click('.side [data-p="tells"]')
-                visual = page.locator(".box.visual")
-                if visual.count():
-                    visual.first.click()
-                elif page.locator(".card[data-t]").count():
-                    page.click(".card[data-t] >> nth=0")
-                shot("page-view-annotated")
             go("#/compare", "#compare-form")
             page.fill("#cmp-a", read("ai-sample.txt")); page.fill("#cmp-b", read("human-sample.txt"))
             page.click("#compare-form .primary"); page.wait_for_selector("#compare-result table", timeout=600000)

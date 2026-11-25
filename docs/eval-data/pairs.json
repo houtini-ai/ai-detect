@@ -1,5 +1,5 @@
 {
- "note": "Same fact written twice: formal, then conversational. Pairs 1-12 are the ones documented in docs/detection-patterns.md (February 2026, desklib). Pairs 13-24 were added for the November 2026 evaluation.",
+ "note": "Same fact written twice: formal, then conversational. Pairs 1-12 are the ones documented in the 1.0.0 detection patterns write-up (February 2026, desklib; since removed). Pairs 13-24 were added for the November 2026 evaluation.",
  "pairs": [
   {"formal": "The software has been significantly improved.", "casual": "Software's got a lot better."},
   {"formal": "Fanatec is not the cheapest option available.", "casual": "Fanatec aren't cheap."},

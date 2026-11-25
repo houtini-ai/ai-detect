@@ -3,9 +3,9 @@ Pattern diagnostics and text metrics — pure Python, no ML dependencies.
 
 These heuristics explain *why* a neural detector flags a sentence. They are
 derived from 70+ paired sentence tests against desklib/ai-text-detector-v1.01
-(see docs/detection-patterns.md). They do not decide the AI/Human label — the
-model does that — they annotate sentences with human-readable reasons and
-concrete rewrite suggestions.
+(the 1.0.0 detection patterns write-up, since removed). They do not decide the
+AI/Human label — the model does that — they annotate sentences with
+human-readable reasons and concrete rewrite suggestions.
 
 Each finding is ``{pattern, match, suggestion, start, end}``; ``start``/``end``
 are character offsets into the sentence, for highlighting.
@@ -17,7 +17,8 @@ import re
 from .text import sent_tokenize  # noqa: F401  (re-exported: the old public home)
 
 # ---------------------------------------------------------------------------
-# Pattern data — sourced from paired sentence tests (see docs/detection-patterns.md)
+# Pattern data — sourced from paired sentence tests
+# (the 1.0.0 detection patterns write-up, since removed)
 # ---------------------------------------------------------------------------
 
 CONTRACTION_MAP = {
