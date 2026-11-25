@@ -3,11 +3,11 @@
  "url": "https://theaiengineer.substack.com/p/how-deepseek-distilled-r1",
  "date": "2026-11-25",
  "device": "cpu",
- "version": "2.0.0",
+ "version": "2.0.1",
  "default_model": "gpttrace-150m",
  "single": {
-  "scan_id": "20261125-070914-1501a5",
-  "created": "2026-11-25T07:09:14",
+  "scan_id": "20261125-093056-9a2861",
+  "created": "2026-11-25T09:30:56",
   "models": [
    "gpttrace-150m"
   ],
@@ -98,7 +98,7 @@
   "page": {
    "page": {
     "width": 1366,
-    "height": 11476,
+    "height": 11850,
     "viewport": [
      1366,
      900
@@ -108,8 +108,8 @@
   }
  },
  "ensemble": {
-  "scan_id": "20261125-071029-21e43b",
-  "created": "2026-11-25T07:10:29",
+  "scan_id": "20261125-093205-e8e806",
+  "created": "2026-11-25T09:32:05",
   "models": [
    "gpttrace-150m",
    "desklib",
@@ -255,7 +255,7 @@
   "page": {
    "page": {
     "width": 1366,
-    "height": 11476,
+    "height": 11850,
     "viewport": [
      1366,
      900

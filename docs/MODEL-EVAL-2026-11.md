@@ -52,7 +52,7 @@ Sources for licence, size and rank: the model card and the Hugging Face API for 
 - **What it is.** desklib/ai-text-detector-v1.01, DeBERTa-v3-large, 434M parameters, 1.74 GB, MIT. https://huggingface.co/desklib/ai-text-detector-v1.01
 - **RAID.** 42nd of 61, 0.912. It was first when submitted on 16 Feb 2025.
 - **Strengths, measured.** Strong on passages here (AUROC 0.996, 97% at 5% FPR). Loads with stock transformers and torch. Permissive licence.
-- **Weaknesses, measured.** Largest download with the second-slowest CPU speed. Flags 60% of human sentences and 17 of 24 casual sentences at 0.5. Sentence-level catch rate at 5% FPR is 17%, joint lowest with conpara.
+- **Weaknesses, measured.** One of the two largest downloads (1736 MB; conpara is 1738 MB), with the second-slowest CPU speed. Flags 60% of human sentences and 17 of 24 casual sentences at 0.5. Sentence-level catch rate at 5% FPR is 17%, joint lowest with conpara.
 - **Quirks.** Custom mean-pooled head defined in code. bfloat16 on CUDA, float32 on CPU, so scores differ slightly by device.
 
 ### light (TMR, int8 ONNX)

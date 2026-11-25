@@ -74,7 +74,7 @@ For Claude Desktop, this goes in `claude_desktop_config.json`:
 }
 ```
 
-This route was checked from a locally packed copy of the package, on Windows and in a clean Linux container: the install, an MCP handshake and a scan.
+This route was checked from a locally packed copy of the package, on Windows and in a clean Linux container: the install, an MCP handshake and a scan. The published 2.0.0 package was then run on Windows 11 on 25 Nov 2026: `npx -y --package @houtini/ai-detect ai-detect --version`, and the MCP server driven by an MCP client. `npm i -g @houtini/ai-detect` was run there too, and it gives you the `ai-detect` and `ai-detect-mcp` commands.
 
 ### Clone and pip on Windows
 
@@ -89,7 +89,7 @@ pip install .
 ai-detect --version
 ```
 
-That prints `ai-detect 2.0.0`. The install takes a bit over a minute and the virtual environment comes to 938 MB. It works from a user folder with a space in its name.
+That prints `ai-detect 2.0.1`. The install takes a bit over a minute and the virtual environment comes to 938 MB. It works from a user folder with a space in its name.
 
 ### Clone and pip on Linux
 
@@ -231,7 +231,7 @@ And five tabs in the side panel:
 |---|---|
 | **Sentence** | Each model's score for the selected sentence, why it was flagged, rewrite suggestions |
 | **Tells** | The structure and style tells. Click one to highlight its blocks or its region |
-| **Rewrite** | Every flagged sentence with its suggestions |
+| **Rewrite** | Every sentence with a calibrated score of 50% or more, or with a pattern hit, with its suggestions |
 | **Models** | Each model's facts and its view of the document |
 | **Signals** | Sentence-length variation, perplexity and burstiness, the passages, and the optional vision second opinion |
 
@@ -757,13 +757,13 @@ If you're coming from a hosted detector such as GPTZero, the trade is roughly th
 ```bash
 pip install ".[all]"
 pip install ".[dev]"
-python -m pytest --ignore=tests/ui     # 255 tests
-python -m pytest tests/ui              # 44 browser tests
+python -m pytest --ignore=tests/ui     # 256 tests
+python -m pytest tests/ui              # 52 browser tests
 python scripts/release_check.py
 ```
 
-- The 255 tests need no model and no network, except `tests/test_mcp_stdio.py`, which runs the real MCP server with the `light` model and is skipped if that model isn't downloaded.
-- The 44 browser tests cover every dashboard control and error path, with a fake backend and a simulated download. They're skipped without Playwright.
+- The 256 tests need no model and no network, except `tests/test_mcp_stdio.py`, which runs the real MCP server with the `light` model and is skipped if that model isn't downloaded.
+- The 52 browser tests cover every dashboard control and error path, and the layout by bounding box, with a fake backend and a simulated download. They're skipped without Playwright.
 - `scripts/release_check.py` checks versions, lint and tests, scans the branch history for secrets, checks the npm tarball, and runs an install-and-scan smoke test.
 
 Where things live:

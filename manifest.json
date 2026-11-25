@@ -2,7 +2,7 @@
   "manifest_version": "0.4",
   "name": "ai-detect",
   "display_name": "ai-detect",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Local AI-text detection: per-sentence and document scores from open detectors, on your own machine.",
   "long_description": "Scores text, files and web pages for AI authorship with open detector models that run on this computer. Nothing is uploaded. The default model, gpttrace-150m, is a 151 MB download from Hugging Face on first use; the other five are 126 MB to 1.7 GB each. Includes a local dashboard.",
   "author": {

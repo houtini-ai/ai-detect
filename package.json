@@ -1,6 +1,6 @@
 {
   "name": "@houtini/ai-detect",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Local AI-text detector: CLI, MCP server and web UI. This npm package is a launcher; the tool itself is Python and is run through uv.",
   "mcpName": "io.github.houtini-ai/ai-detect",
   "bin": {

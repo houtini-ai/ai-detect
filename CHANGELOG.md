@@ -1,6 +1,22 @@
 # Changelog
 
-## [2.0.0] - 2026-11-25 (prepared, not published)
+## [2.0.1] - 2026-11-25
+
+A patch to 2.0.0. No change to the models, the scores, the CLI flags or the MCP tools.
+
+### Fixed
+- **The Sentences view drew its table over the side panel.** On a result page with several models (five, plus the perplexity column, in the reported case) the table was wider than its column, so the Combined and Perplexity columns were printed on top of the side panel. The Sentences view now takes the full width with the side panel under it, and the table scrolls sideways inside its own box if it is still too wide. Text and Page views are unchanged. Clicking a row marks it and brings its detail into view.
+- The HTML report's Models table headed each model's own document probability "Doc score". It is the raw figure, and the heading now says "Doc score (raw)".
+- `--help` said `--device auto` means "GPU if available". For the ONNX models, the default among them, a standard install runs on the CPU even with a GPU present. The help text and the `detect_ai_text` tool description now say what happens for each model family.
+
+### Changed
+- Docs: statements written before the release are corrected. The npm package `@houtini/ai-detect` and the MCP registry entry `io.github.houtini-ai/ai-detect` exist (2.0.0, 25 Nov 2026); the tool is still not on PyPI. The npm commands given are the ones that were run against the published package. The Rewrite tab is described as the code behaves: sentences with a calibrated score of 50% or more, or with any pattern hit.
+- All screenshots retaken with 2.0.1 from the same worked-example page. Its figures came out the same as on the 2.0.0 run.
+
+### Tests
+- Browser tests that measure bounding boxes: the Sentences table against the side panel from 1100 to 1920 px, with one model and with five models plus perplexity; the other views, side tabs and pages at 1440 px.
+
+## [2.0.0] - 2026-11-25
 
 Previous version: 1.0.0. This is a major version because existing installs are affected: the default model changes from `desklib` to `gpttrace-150m`, the Python floor rises from 3.9 to 3.11, the MCP server now runs detection in a second process, and `get_model_status` gains states it did not have before. The CLI flags and the five original MCP tool names, parameters and result keys are unchanged.
 
