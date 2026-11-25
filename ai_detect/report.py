@@ -171,7 +171,8 @@ def to_html(report) -> str:
     out.append("<table>")
     cols = ["Model", "Licence", "RAID rank"]
     if pm is not None:
-        cols += ["Doc score", "Flagged"]
+        # Each model's own document probability, before calibration: say so in the heading.
+        cols += ["Doc score (raw)", "Flagged"]
     out.append("<tr>" + "".join("<th>" + html.escape(c) + "</th>" for c in cols) + "</tr>")
     for mid in models:
         info = mi.get(mid, {})

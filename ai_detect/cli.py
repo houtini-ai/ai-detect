@@ -361,7 +361,9 @@ def main(argv=None):
     parser.add_argument("--ensemble", "-e", action="store_true",
                         help="Run every downloaded model (up to 5) as an ensemble")
     parser.add_argument("--device", "-d", default=None, choices=["auto", "cpu", "cuda"],
-                        help="Compute device (default: auto = GPU if available, else CPU)")
+                        help="Compute device. Default auto: the ONNX models (the default model is one) "
+                             "run on the CPU unless a GPU build of ONNX Runtime is installed; the "
+                             "PyTorch models use CUDA if torch has it, else the CPU")
     parser.add_argument("--perplexity", "-p", action="store_true",
                         help="Add GPT-2 perplexity and burstiness (548 MB on first use)")
     parser.add_argument("--no-tells", action="store_true",

@@ -189,7 +189,7 @@ function tableView(r) {
     ${r.models.map((m) => `<td class="num"><span class="heat ${heat(s.calibrated ? s.calibrated[m] : s.scores[m])}" title="raw ${pct(s.scores[m])}">${pct(s.calibrated ? s.calibrated[m] : s.scores[m])}</span></td>`).join('')}
     ${multi ? `<td class="num"><span class="pips">${r.models.map((m) => `<i class="${s.flags[m] ? 'on' : ''}"></i>`).join('')}</span></td><td class="num"><span class="heat ${heat(score(s))}">${pct(score(s))}</span></td>` : ''}
     ${r.perplexity ? `<td class="num">${s.perplexity ?? ''}</td>` : ''}</tr>`).join('');
-  return `<table><thead><tr><th>Sentence</th>${r.models.map((m) => `<th class="num">${esc(m)}</th>`).join('')}${multi ? '<th class="num">Agree</th><th class="num">Combined</th>' : ''}${r.perplexity ? '<th class="num">Perplexity</th>' : ''}</tr></thead><tbody>${rows}</tbody></table>
+  return `<div class="tablewrap" tabindex="0" role="region" aria-label="Sentence scores"><table><thead><tr><th>Sentence</th>${r.models.map((m) => `<th class="num">${esc(m)}</th>`).join('')}${multi ? '<th class="num">Agree</th><th class="num">Combined</th>' : ''}${r.perplexity ? '<th class="num">Perplexity</th>' : ''}</tr></thead><tbody>${rows}</tbody></table></div>
   <p class="hint">Calibrated scores: 50% is the point 5% of human-written sentences reach on the local evaluation set. Hover a figure for the model's raw probability.</p>`;
 }
 function pageView(r, tells) {
@@ -254,6 +254,8 @@ async function resultPage(id) {
   const tab = (name) => { $$('.side [role=tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.p === name)); panel.innerHTML = panels[name]; };
   const view = (name) => {
     $$('#view button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === name));
+    // The Sentences table needs the full width: the side panel moves under it.
+    $('.work').classList.toggle('stacked', name === 'table');
     left.innerHTML = views[name]();
     const shot = $('#shot');
     if (shot) { const fit = () => shot.style.setProperty('--k', shot.clientWidth / r.page.page.width + 'px'); fit(); new ResizeObserver(fit).observe(shot); }
@@ -266,6 +268,8 @@ async function resultPage(id) {
     $$('.s.on, tr.on').forEach((e) => e.classList.remove('on'));
     const el = $(`.s[data-i="${i}"]`);
     if (el) { el.classList.add('on'); el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+    const row = $(`#left tr[data-i="${i}"]`);
+    if (row) { row.classList.add('on'); $('.side').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
   };
   const pickTell = (n) => {
     const t = tells.find((x) => x.n === n);

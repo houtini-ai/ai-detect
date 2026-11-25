@@ -145,6 +145,14 @@ tr.link { cursor: pointer; } tr.link:hover td { background: var(--hover); }
 .side { position: sticky; top: 72px; max-height: calc(100vh - 92px); overflow: auto; border-left: 1px solid var(--line); padding-left: 24px; }
 .side .tabs { margin-top: 0; position: sticky; top: 0; background: var(--canvas); z-index: 1; }
 .side .tabs button { padding: 8px 9px; font-size: 0.8125rem; }
+/* A table wider than its box scrolls sideways inside the box; it never spills over a neighbour. */
+.tablewrap { max-width: 100%; overflow-x: auto; }
+/* Sentences view: the table takes the full width and the side panel sits under it
+   (the same stacked layout the narrow-screen rule below gives every view). */
+.work.stacked { grid-template-columns: minmax(0, 1fr); }
+.work.stacked .side { position: static; max-height: none; border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 16px; }
+.work.stacked td:first-child { min-width: 18rem; }
+tr.on td { background: var(--accent-wash); }
 .card { border-bottom: 1px solid var(--line); padding: 12px 0; font-size: 0.875rem; }
 .card.click { cursor: pointer; } .card.click:hover, .card.on { background: var(--accent-wash); margin: 0 -10px; padding: 12px 10px; }
 .card q { font-family: var(--serif); color: var(--prose); quotes: "\201c" "\201d"; display: block; margin: 4px 0; }
@@ -166,7 +174,7 @@ tr.link { cursor: pointer; } tr.link:hover td { background: var(--hover); }
 .delta { font: 500 1.4rem var(--mono); color: var(--text); }
 .heat { display: inline-block; min-width: 3.4em; text-align: right; padding: 1px 6px; border-radius: 3px; }
 @media (max-width: 980px) {
-  .work, .two, .cols { grid-template-columns: 1fr; } .side { position: static; max-height: none; border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 16px; }
+  .work, .two, .cols { grid-template-columns: minmax(0, 1fr); } .side { position: static; max-height: none; border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 16px; }
   .verdict { grid-template-columns: 1fr 1fr; } .top { gap: 12px; padding: 0 14px; overflow-x: auto; } .page { padding: 24px 14px 48px; }
   .ledger > * { grid-template-columns: 22px 1fr 84px 96px; } .ledger .wide { display: none; }
 }

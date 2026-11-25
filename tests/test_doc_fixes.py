@@ -242,6 +242,20 @@ def test_html_export_shows_the_calibrated_score_and_labels_the_raw_one(fake_mode
     assert "Document score, raw" not in page
 
 
+def test_html_export_labels_each_models_document_score_as_raw(fake_models):
+    # The Models table of an ensemble report prints every model's own document
+    # probability. It is not the calibrated score above it, so the heading says raw.
+    import re
+    from ai_detect import report as exports
+    fake_models()
+    both = analyze.analyze(AI_TEXT, models=["gpttrace-150m", "light"])
+    page = exports.to_html(both)
+    heads = re.findall(r"<th>(.*?)</th>", page.split("<h2>Models</h2>")[1].split("</table>")[0])
+    assert heads == ["Model", "Licence", "RAID rank", "Doc score (raw)", "Flagged"]
+    for mid, row in both["per_model"].items():
+        assert f'<td class="num">{row["document_ai_pct"]}</td>' in page
+
+
 def test_cli_prints_the_assessment_and_labels_raw_figures(monkeypatch, capsys, fake_models):
     from ai_detect import cli
     fake_models(ai=1.2)

@@ -416,7 +416,9 @@ async def detect_ai_text(
         text: The text to analyse (plain text or Markdown).
         model: A model id, or up to 5 comma-separated ids to run as an ensemble
             (see list_models). Default 'gpttrace-150m'.
-        device: 'auto' (GPU if available, else CPU), 'cpu', or 'cuda'.
+        device: 'auto', 'cpu', or 'cuda'. With 'auto' the ONNX models (the default model is
+            one) run on the CPU unless a GPU build of ONNX Runtime is installed, and the
+            PyTorch models use CUDA if torch has it, else the CPU.
         include_all_sentences: Also return every scored sentence, not just flagged ones.
         perplexity: Add a GPT-2 perplexity and burstiness readout (548 MB on first use).
 
